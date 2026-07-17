@@ -1,0 +1,63 @@
+# Optional profile: Herdr terminal orchestration
+#
+# Select this profile only for a project that has chosen to run Claude
+# Code and/or Codex inside Herdr (https://github.com/ogulcancelik/herdr,
+# https://herdr.dev), a free local terminal multiplexer. See
+# notices/herdr.md for source/license and integrations/herdr/README.md
+# for the full integration boundary.
+
+name: herdr
+description: >
+  Workspace conventions for coordinating multiple Claude Code / Codex
+  sessions inside Herdr-managed terminal panes. Inert when Herdr is not
+  installed or the session is not running inside a Herdr-managed pane.
+category: orchestration
+optional: true
+
+external_tool:
+  name: herdr
+  homepage: https://herdr.dev
+  repository: https://github.com/ogulcancelik/herdr
+  license: AGPL-3.0-or-later (separate commercial license available)
+  installation: >
+    Installed and run entirely outside this repository, by the user, on
+    their own machine (curl script, Homebrew, mise, or a GitHub release
+    binary). This profile never installs, downloads, or bundles Herdr.
+  version_pin: >
+    none — record the installed `herdr --version` in the consuming
+    project's own notes; see notices/herdr.md for guidance.
+
+skills:
+  - herdr-workspace
+
+integration:
+  - integrations/herdr
+
+notices:
+  - notices/herdr.md
+
+activation_gate:
+  environment_variable: HERDR_ENV
+  required_value: "1"
+  behavior_if_absent: >
+    The herdr-workspace skill must decline to issue any Herdr CLI or
+    socket command and behave as if this profile were not selected.
+
+safety:
+  - "Fully local and free — no API keys, no hosted control plane, no
+    required remote server."
+  - "No automatic production authority — pane coordination status
+    (working/blocked/done) is not merge, deploy, or release authority."
+  - "Optional and reversible — a project with this profile selected must
+    keep working normally when Herdr is not installed or not running."
+  - "Never vendor, copy, embed, or modify Herdr source code in this
+    repository."
+
+compatible_agents:
+  - Claude Code
+  - Codex
+
+platform_note: >
+  Herdr's Linux and macOS builds are the stable path. Windows native
+  builds are beta/preview upstream; on Windows, run Herdr (and Claude
+  Code/Codex) inside WSL2 for a stable experience.
