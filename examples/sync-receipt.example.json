@@ -1,0 +1,25 @@
+{
+  "receiptVersion": "1",
+  "profile": "product-build",
+  "sourceRelease": "v0.1.0",
+  "adapter": { "id": "claude-code", "targetDir": ".claude/skills" },
+  "generatedAt": "2026-07-20T15:04:00.000Z",
+  "skills": [
+    {
+      "id": "actionlint-ci-lint",
+      "files": [
+        { "path": "SKILL.md", "sha256": "1f3d2b9a7e6c4f1a8d9b2e5c7f4a1d8b3e6c9f2a5d8b1e4c7f0a3d6b9e2c5f8a" }
+      ],
+      "skillChecksum": "7a2c5f8e1b4d7a0c3f6b9e2d5a8c1f4b7e0a3d6c9f2b5e8a1d4c7f0b3e6a9d2c"
+    },
+    {
+      "id": "playwright-regression",
+      "files": [
+        { "path": "SKILL.md", "sha256": "9e4b7a1d3c6f9e2a5b8d1c4f7a0e3b6d9c2f5a8e1b4d7a0c3f6b9e2d5a8c1f4b" },
+        { "path": "references/setup.md", "sha256": "3b6e9c2f5a8d1b4e7c0a3f6d9b2e5c8f1a4d7b0e3c6f9a2d5b8e1c4f7a0d3b6e" }
+      ],
+      "skillChecksum": "5d8b1e4c7f0a3d6b9e2c5f8a1d4c7f0b3e6a9d2c5f8b1e4d7a0c3f6b9e2d5a8c"
+    }
+  ],
+  "receiptChecksum": "c1f4b7e0a3d6c9f2b5e8a1d4c7f0b3e6a9d2c5f8b1e4d7a0c3f6b9e2d5a8c1f4"
+}
