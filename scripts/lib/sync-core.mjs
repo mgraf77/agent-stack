@@ -38,20 +38,16 @@ export function resolveProfilePath(profileArg, profilesDir) {
 }
 
 // Loads a profile using the shared Agent Stack profile contract
-// (schemas/project-profile.schema.json): the profile identifier is read
-// from "profile_id" — the legacy "profile" field is only consulted as a
-// fallback and is not required once "profile_id" is present. The skill
-// export list is this adapter's domain-specific field, "skills" (a
-// project-profile's broader "capabilities" list is out of scope here —
-// this sync only ever exports skills/<name>/SKILL.md packages).
+// (schemas/project-profile.schema.json): "profile" is the required,
+// canonical identifier field. The skill export list is this adapter's
+// domain-specific field, "skills" (a project-profile's broader
+// "capabilities" list is out of scope here — this sync only ever exports
+// skills/<name>/SKILL.md packages).
 export function loadProfile(profilePath) {
   const profile = JSON.parse(readFileSync(profilePath, 'utf8'));
 
-  const profileId = profile.profile_id ?? profile.profile;
-  if (!profileId) {
-    throw new Error(
-      `Profile at ${profilePath} must declare "profile_id" (preferred) or legacy "profile"`,
-    );
+  if (!profile.profile) {
+    throw new Error(`Profile at ${profilePath} must declare "profile"`);
   }
 
   if (!Array.isArray(profile.skills) || profile.skills.length === 0) {
@@ -70,7 +66,7 @@ export function loadProfile(profilePath) {
       `Profile at ${profilePath} lists duplicate skill id(s): ${[...duplicates].sort().join(', ')}`,
     );
   }
-  return { ...profile, profileId };
+  return profile;
 }
 
 // Resolves each selected skill id to its canonical source directory under

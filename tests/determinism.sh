@@ -2,9 +2,9 @@
 # Proves that syncing the same synthetic fixture profile twice, into two
 # independent output roots, produces byte-identical exports and receipts.
 # Exercises dry-run, apply, and doctor for both adapters; the shared
-# profile_id/skills profile contract (plus legacy "profile" field
-# back-compat and duplicate-skill-id rejection); the no-symlink rule; and
-# that switching profiles removes skills the new profile no longer selects.
+# profile/skills profile contract (required "profile" identifier field
+# and duplicate-skill-id rejection); the no-symlink rule; and that
+# switching profiles removes skills the new profile no longer selects.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -50,13 +50,13 @@ fi
 echo "OK: dry-run made no filesystem changes"
 echo
 
-echo "== profile_id is the preferred identifier field =="
+echo "== \"profile\" is the canonical, required identifier field =="
 node "${REPO_ROOT}/scripts/sync.mjs" \
   --profile demo \
   --mode dry-run \
   --skills-dir "${FIXTURE_SKILLS}" \
   --profiles-dir "${FIXTURE_PROFILES}" \
-  --out-root "${WORK_DIR}/profile-id-check" \
+  --out-root "${WORK_DIR}/profile-field-check" \
   --release "fixture-0.0.0" \
   --timestamp "${FIXED_TIMESTAMP}" \
   | node -e '
@@ -65,30 +65,11 @@ node "${REPO_ROOT}/scripts/sync.mjs" \
       console.error(`FAIL: expected plan.profile "demo", got "${plan.profile}"`);
       process.exit(1);
     }
-    console.log("OK: profile_id (\"demo\") read as the plan/receipt profile identifier");
+    console.log("OK: \"profile\" (\"demo\") read as the plan/receipt profile identifier");
   '
 
 echo
-echo "== legacy \"profile\" field still accepted when profile_id is absent =="
-node "${REPO_ROOT}/scripts/sync.mjs" \
-  --profile legacy-format \
-  --mode dry-run \
-  --skills-dir "${FIXTURE_SKILLS}" \
-  --profiles-dir "${FIXTURE_PROFILES}" \
-  --out-root "${WORK_DIR}/legacy-format-check" \
-  --release "fixture-0.0.0" \
-  --timestamp "${FIXED_TIMESTAMP}" \
-  | node -e '
-    const plan = JSON.parse(require("fs").readFileSync(0, "utf8"));
-    if (plan.profile !== "legacy-format") {
-      console.error(`FAIL: expected plan.profile "legacy-format", got "${plan.profile}"`);
-      process.exit(1);
-    }
-    console.log("OK: legacy \"profile\" field still resolves when profile_id is absent");
-  '
-
-echo
-echo "== profile with neither profile_id nor profile is rejected =="
+echo "== profile missing the required \"profile\" field is rejected =="
 if node "${REPO_ROOT}/scripts/sync.mjs" \
   --profile missing-identifier \
   --mode dry-run \
@@ -96,16 +77,16 @@ if node "${REPO_ROOT}/scripts/sync.mjs" \
   --profiles-dir "${FIXTURE_PROFILES}" \
   --out-root "${WORK_DIR}/missing-identifier-check" \
   > "${WORK_DIR}/missing-identifier.log" 2>&1; then
-  echo "FAIL: sync.mjs accepted a profile with no profile_id or profile field"
+  echo "FAIL: sync.mjs accepted a profile with no \"profile\" field"
   cat "${WORK_DIR}/missing-identifier.log"
   exit 1
 fi
-if ! grep -q 'must declare "profile_id"' "${WORK_DIR}/missing-identifier.log"; then
+if ! grep -q 'must declare "profile"' "${WORK_DIR}/missing-identifier.log"; then
   echo "FAIL: error message did not clearly explain the missing identifier"
   cat "${WORK_DIR}/missing-identifier.log"
   exit 1
 fi
-echo "OK: profile with no profile_id/profile rejected with a clear error"
+echo "OK: profile with no \"profile\" field rejected with a clear error"
 
 echo
 echo "== duplicate skill ids are rejected =="

@@ -1,4 +1,4 @@
 {
-  "description": "Synthetic profile with neither profile_id nor profile, used to prove sync.mjs rejects it with a clear error.",
+  "description": "Synthetic profile with no \"profile\" field, used to prove sync.mjs rejects it with a clear error.",
   "skills": ["hello-world"]
 }

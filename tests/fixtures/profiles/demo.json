@@ -1,5 +1,5 @@
 {
-  "profile_id": "demo",
+  "profile": "demo",
   "description": "Synthetic profile used only by distribution sync fixtures/tests.",
   "skills": ["hello-world", "demo-tool"]
 }
