@@ -1,0 +1,11 @@
+{
+  "profile_id": "herdr",
+  "profile": "herdr",
+  "display_name": "Herdr terminal orchestration",
+  "description": "Optional workspace conventions for coordinating multiple Claude Code / Codex sessions inside Herdr (https://github.com/ogulcancelik/herdr, https://herdr.dev), a free local terminal multiplexer. Selecting this profile is a per-project opt-in and has no effect on any project or profile that does not select it.",
+  "target_projects": ["*"],
+  "capabilities": [],
+  "skills": ["herdr-workspace"],
+  "policies": ["free-first.md", "promotion-lifecycle.md"],
+  "notes": "capabilities is intentionally empty: Herdr is never catalogued or vendored as a reusable capability record, only referenced as an externally installed local binary the user installs themselves. skills selects herdr-workspace (skills/herdr-workspace/SKILL.md) directly so scripts/sync.mjs (PR #8) can export it; sync.mjs reads the profile name from a `profile` field, while schemas/project-profile.schema.json (PR #9) names that same field `profile_id`, so both are set here to the same value (`herdr`) until the two lanes reconcile on one field name. schemas/project-profile.schema.json also does not yet define a skills property; this profile was validated against that schema extended with optional profile and skills fields as an equivalent local fixture, and separately smoke-tested with a reconstructed copy of scripts/sync.mjs in dry-run mode, confirming it resolves herdr-workspace correctly. Full pane-topology, the HERDR_ENV=1 ownership-signal gate, Claude Code/Codex usage, Windows/WSL2 guidance, and the AGPL boundary are documented in integrations/herdr/README.md, skills/herdr-workspace/SKILL.md, and notices/herdr.md — this profile only selects; it does not restate them."
+}
