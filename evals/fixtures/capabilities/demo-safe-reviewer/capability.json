@@ -1,0 +1,19 @@
+{
+  "name": "demo-safe-reviewer",
+  "summary": "Synthetic fixture: a compliant PR-review capability. Every check should PASS.",
+  "source_repo": "garrytan/gstack",
+  "catalog_decision": "ADOPT NOW",
+  "version_pin": "v1.2.3",
+  "license": "MIT",
+  "declared_tools": ["Read", "Grep"],
+  "untrusted_content_handling": true,
+  "trigger_keywords": ["review this pr", "review the diff", "pr diff"],
+  "positive_examples": [
+    "Can you review this PR diff for style issues?",
+    "Please review the diff on branch feature/x before merge."
+  ],
+  "negative_examples": [
+    "Deploy this build to production now.",
+    "What's the weather today?"
+  ]
+}
