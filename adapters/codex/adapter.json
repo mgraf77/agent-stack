@@ -1,0 +1,6 @@
+{
+  "id": "codex",
+  "displayName": "Codex CLI",
+  "targetDir": ".agents/skills",
+  "skillEntryFile": "SKILL.md"
+}
