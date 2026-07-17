@@ -1,0 +1,16 @@
+{
+  "id": "container-use-sandbox-pilot",
+  "name": "Container Use sandbox pilot",
+  "summary": "Trial for one higher-risk or dependency-heavy task, after worktree-only orchestration is already working.",
+  "category": "agent-sandbox",
+  "status": "pilot",
+  "source": {
+    "canonical_repo_or_product": "dagger/container-use",
+    "url": "https://github.com/dagger/container-use",
+    "license_or_terms": "Apache-2.0"
+  },
+  "local_modifications": "",
+  "compatible_profiles": ["experimental"],
+  "added_date": "2026-07-17",
+  "notes": "Explicitly experimental upstream; see catalog/repositories.csv row for full rationale."
+}

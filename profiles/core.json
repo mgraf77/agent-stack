@@ -1,0 +1,16 @@
+{
+  "profile_id": "core",
+  "display_name": "Core",
+  "description": "Baseline capabilities safe and useful for every project regardless of product domain: review workflow, guardrails, evaluation gate, context packaging, secret scanning, and lightweight spec artifacts.",
+  "target_projects": ["*"],
+  "capabilities": [
+    "gstack-review-workflow",
+    "claude-guardrails-lite",
+    "promptfoo-eval-gate",
+    "repomix-context-export",
+    "gitleaks-secret-scan",
+    "openspec-lightweight-workflow"
+  ],
+  "policies": ["free-first.md", "promotion-lifecycle.md"],
+  "notes": "Every other profile is expected to be a superset of core, or to justify in its notes why it omits a core capability."
+}

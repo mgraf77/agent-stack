@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-stack.local/schemas/sync-release-receipt.schema.json",
+  "title": "Sync/release receipt",
+  "description": "A record of one profile sync or release event, stored as catalog/receipts/<receipt_id>.json.",
+  "type": "object",
+  "required": ["receipt_id", "type", "date", "profile", "target_project", "validated"],
+  "properties": {
+    "receipt_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "description": "Must match the filename without extension. Recommended: <date>-<profile>-<type>."
+    },
+    "type": { "type": "string", "enum": ["sync", "release"] },
+    "date": { "type": "string", "format": "date" },
+    "profile": { "type": "string", "description": "profile_id this receipt applies to." },
+    "target_project": { "type": "string" },
+    "source_commit": {
+      "type": "string",
+      "description": "Agent Stack git commit SHA the sync/release was generated from."
+    },
+    "files_changed": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "validated": {
+      "type": "boolean",
+      "description": "Whether scripts/validate.py passed before this receipt was recorded."
+    },
+    "validator": { "type": "string", "description": "Command used to validate, e.g. scripts/validate.py." },
+    "notes": { "type": "string" }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,16 @@
+{
+  "id": "openspec-lightweight-workflow",
+  "name": "OpenSpec lightweight spec artifacts",
+  "summary": "Lightweight spec artifacts used inside the existing issue/branch/PR flow; no separate backlog system.",
+  "category": "spec-workflow",
+  "status": "adopt_now",
+  "source": {
+    "canonical_repo_or_product": "Fission-AI/OpenSpec",
+    "url": "https://github.com/Fission-AI/OpenSpec",
+    "license_or_terms": "MIT"
+  },
+  "local_modifications": "",
+  "compatible_profiles": ["core", "product-build", "experimental"],
+  "added_date": "2026-07-17",
+  "notes": "See catalog/repositories.csv row for full rationale."
+}

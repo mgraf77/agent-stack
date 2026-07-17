@@ -1,0 +1,17 @@
+{
+  "id": "actionlint-ci-lint",
+  "name": "actionlint GitHub Actions linting",
+  "summary": "Static analysis for GitHub Actions YAML, enabled conditionally wherever Actions workflows exist.",
+  "category": "ci-linting",
+  "status": "adopt_now",
+  "source": {
+    "canonical_repo_or_product": "rhysd/actionlint",
+    "url": "https://github.com/rhysd/actionlint",
+    "version_or_commit": "v1.7.12",
+    "license_or_terms": "MIT"
+  },
+  "local_modifications": "",
+  "compatible_profiles": ["product-build"],
+  "added_date": "2026-07-17",
+  "notes": "Only relevant where a project already has .github/workflows; do not add workflows merely to use the linter."
+}

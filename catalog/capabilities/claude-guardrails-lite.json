@@ -1,0 +1,17 @@
+{
+  "id": "claude-guardrails-lite",
+  "name": "Claude Guardrails (Lite profile)",
+  "summary": "Baseline hook/settings guardrails for trusted repos; OS/container sandboxing remains the real security boundary.",
+  "category": "security-guardrails",
+  "status": "adopt_now",
+  "source": {
+    "canonical_repo_or_product": "dwarvesf/claude-guardrails",
+    "url": "https://github.com/dwarvesf/claude-guardrails",
+    "version_or_commit": "v0.4.0",
+    "license_or_terms": "MIT"
+  },
+  "local_modifications": "Lite profile only; hook/settings diffs must be verified before use in any project.",
+  "compatible_profiles": ["core", "product-build", "accentos", "michaelos", "experimental"],
+  "added_date": "2026-07-17",
+  "notes": "See catalog/repositories.csv row for full rationale."
+}

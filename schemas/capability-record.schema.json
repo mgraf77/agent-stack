@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-stack.local/schemas/capability-record.schema.json",
+  "title": "Capability record",
+  "description": "One curated, reusable capability derived from a catalogued source, stored as catalog/capabilities/<id>.json.",
+  "type": "object",
+  "required": ["id", "name", "summary", "category", "status", "source", "compatible_profiles", "added_date"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "description": "Kebab-case identifier; must match the filename without extension."
+    },
+    "name": { "type": "string", "minLength": 1 },
+    "summary": { "type": "string", "minLength": 1 },
+    "category": { "type": "string", "minLength": 1 },
+    "status": {
+      "type": "string",
+      "enum": ["adopt_now", "pilot", "harvest", "watch"],
+      "description": "Local capability status. Must be consistent with the linked catalogue decision; do_not_use/unresolved sources never become capability records."
+    },
+    "source": {
+      "type": "object",
+      "required": ["canonical_repo_or_product", "license_or_terms"],
+      "properties": {
+        "canonical_repo_or_product": {
+          "type": "string",
+          "description": "Must match a display_name or canonical_repo_or_product value in catalog/repositories.csv."
+        },
+        "url": { "type": "string" },
+        "version_or_commit": { "type": "string" },
+        "license_or_terms": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "local_modifications": {
+      "type": "string",
+      "description": "What, if anything, was changed from upstream. Empty string means unmodified."
+    },
+    "compatible_profiles": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "description": "profile_id values (from profiles/*.json) this capability is relevant and safe for. No cap on length."
+    },
+    "added_date": { "type": "string", "format": "date" },
+    "notes": { "type": "string" }
+  },
+  "additionalProperties": false
+}

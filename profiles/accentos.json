@@ -1,0 +1,14 @@
+{
+  "profile_id": "accentos",
+  "display_name": "AccentOS",
+  "description": "Core review/guardrail/scanning capabilities plus browser regression evidence for AccentOS. No product-specific or private context; expand as real AccentOS skill needs are identified.",
+  "target_projects": ["AccentOS"],
+  "capabilities": [
+    "gstack-review-workflow",
+    "claude-guardrails-lite",
+    "gitleaks-secret-scan",
+    "playwright-regression"
+  ],
+  "policies": ["free-first.md", "promotion-lifecycle.md"],
+  "notes": "Intentionally generic at foundation stage; grow this list as AccentOS-specific compatible capabilities are curated, without any artificial cap."
+}

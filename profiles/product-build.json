@@ -1,0 +1,18 @@
+{
+  "profile_id": "product-build",
+  "display_name": "Product build",
+  "description": "Core plus everything relevant to actively building and shipping product code: CI linting and browser regression evidence, on top of the review, guardrail, evaluation, packaging, scanning, and spec capabilities every project gets.",
+  "target_projects": ["*"],
+  "capabilities": [
+    "gstack-review-workflow",
+    "claude-guardrails-lite",
+    "promptfoo-eval-gate",
+    "repomix-context-export",
+    "gitleaks-secret-scan",
+    "openspec-lightweight-workflow",
+    "actionlint-ci-lint",
+    "playwright-regression"
+  ],
+  "policies": ["free-first.md", "promotion-lifecycle.md"],
+  "notes": "actionlint-ci-lint only applies where a project already has .github/workflows; it is a no-op otherwise."
+}

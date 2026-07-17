@@ -1,0 +1,16 @@
+{
+  "id": "aider-fallback-pilot",
+  "name": "Aider low-cost fallback pilot",
+  "summary": "Trial as a lower-cost multi-provider fallback coding agent on bounded, non-critical tasks; automatic commits stay disabled.",
+  "category": "terminal-coding-agent",
+  "status": "pilot",
+  "source": {
+    "canonical_repo_or_product": "Aider-AI/aider",
+    "url": "https://github.com/Aider-AI/aider",
+    "license_or_terms": "Apache-2.0"
+  },
+  "local_modifications": "Automatic commits disabled; bounded, non-critical tasks only.",
+  "compatible_profiles": ["experimental"],
+  "added_date": "2026-07-17",
+  "notes": "See catalog/repositories.csv row for full rationale."
+}
