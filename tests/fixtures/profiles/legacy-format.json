@@ -1,0 +1,5 @@
+{
+  "profile": "legacy-format",
+  "description": "Synthetic profile using only the legacy \"profile\" identifier field (no profile_id), used to prove sync.mjs still accepts it when profile_id is absent.",
+  "skills": ["hello-world"]
+}

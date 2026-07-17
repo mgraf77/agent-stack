@@ -4,6 +4,12 @@
 // target directory (.agents/skills for Codex, .claude/skills for Claude Code),
 // and writes a receipt/lockfile recording what was exported and why.
 //
+// Profile contract (shared with schemas/project-profile.schema.json):
+// the profile identifier is read from "profile_id" (preferred); the legacy
+// "profile" field is only used as a fallback when "profile_id" is absent.
+// The skill export list is "skills": an array of skill ids, each resolved
+// under --skills-dir. Duplicate skill ids are rejected.
+//
 // Usage:
 //   node scripts/sync.mjs --profile <name-or-path> --mode dry-run|apply [options]
 //
@@ -118,14 +124,14 @@ function main() {
 
   const receipts = adapters.map((adapter) => {
     const receiptChecksum = computeReceiptChecksum({
-      profile: profile.profile,
+      profile: profile.profileId,
       sourceRelease: release,
       adapterId: adapter.id,
       skills,
     });
     return {
       receiptVersion: '1',
-      profile: profile.profile,
+      profile: profile.profileId,
       sourceRelease: release,
       adapter: { id: adapter.id, targetDir: adapter.targetDir },
       generatedAt: timestamp,
@@ -140,7 +146,7 @@ function main() {
 
   const plan = {
     mode: args.mode,
-    profile: profile.profile,
+    profile: profile.profileId,
     profilePath,
     sourceRelease: release,
     skills: skills.map((s) => ({ id: s.id, fileCount: s.files.length, skillChecksum: s.skillChecksum })),

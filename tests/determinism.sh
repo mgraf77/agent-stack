@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 # Proves that syncing the same synthetic fixture profile twice, into two
 # independent output roots, produces byte-identical exports and receipts.
-# Exercises dry-run, apply, and doctor for both adapters.
+# Exercises dry-run, apply, and doctor for both adapters; the shared
+# profile_id/skills profile contract (plus legacy "profile" field
+# back-compat and duplicate-skill-id rejection); the no-symlink rule; and
+# that switching profiles removes skills the new profile no longer selects.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -47,6 +50,84 @@ fi
 echo "OK: dry-run made no filesystem changes"
 echo
 
+echo "== profile_id is the preferred identifier field =="
+node "${REPO_ROOT}/scripts/sync.mjs" \
+  --profile demo \
+  --mode dry-run \
+  --skills-dir "${FIXTURE_SKILLS}" \
+  --profiles-dir "${FIXTURE_PROFILES}" \
+  --out-root "${WORK_DIR}/profile-id-check" \
+  --release "fixture-0.0.0" \
+  --timestamp "${FIXED_TIMESTAMP}" \
+  | node -e '
+    const plan = JSON.parse(require("fs").readFileSync(0, "utf8"));
+    if (plan.profile !== "demo") {
+      console.error(`FAIL: expected plan.profile "demo", got "${plan.profile}"`);
+      process.exit(1);
+    }
+    console.log("OK: profile_id (\"demo\") read as the plan/receipt profile identifier");
+  '
+
+echo
+echo "== legacy \"profile\" field still accepted when profile_id is absent =="
+node "${REPO_ROOT}/scripts/sync.mjs" \
+  --profile legacy-format \
+  --mode dry-run \
+  --skills-dir "${FIXTURE_SKILLS}" \
+  --profiles-dir "${FIXTURE_PROFILES}" \
+  --out-root "${WORK_DIR}/legacy-format-check" \
+  --release "fixture-0.0.0" \
+  --timestamp "${FIXED_TIMESTAMP}" \
+  | node -e '
+    const plan = JSON.parse(require("fs").readFileSync(0, "utf8"));
+    if (plan.profile !== "legacy-format") {
+      console.error(`FAIL: expected plan.profile "legacy-format", got "${plan.profile}"`);
+      process.exit(1);
+    }
+    console.log("OK: legacy \"profile\" field still resolves when profile_id is absent");
+  '
+
+echo
+echo "== profile with neither profile_id nor profile is rejected =="
+if node "${REPO_ROOT}/scripts/sync.mjs" \
+  --profile missing-identifier \
+  --mode dry-run \
+  --skills-dir "${FIXTURE_SKILLS}" \
+  --profiles-dir "${FIXTURE_PROFILES}" \
+  --out-root "${WORK_DIR}/missing-identifier-check" \
+  > "${WORK_DIR}/missing-identifier.log" 2>&1; then
+  echo "FAIL: sync.mjs accepted a profile with no profile_id or profile field"
+  cat "${WORK_DIR}/missing-identifier.log"
+  exit 1
+fi
+if ! grep -q 'must declare "profile_id"' "${WORK_DIR}/missing-identifier.log"; then
+  echo "FAIL: error message did not clearly explain the missing identifier"
+  cat "${WORK_DIR}/missing-identifier.log"
+  exit 1
+fi
+echo "OK: profile with no profile_id/profile rejected with a clear error"
+
+echo
+echo "== duplicate skill ids are rejected =="
+if node "${REPO_ROOT}/scripts/sync.mjs" \
+  --profile duplicate-skill \
+  --mode dry-run \
+  --skills-dir "${FIXTURE_SKILLS}" \
+  --profiles-dir "${FIXTURE_PROFILES}" \
+  --out-root "${WORK_DIR}/duplicate-skill-check" \
+  > "${WORK_DIR}/duplicate-skill.log" 2>&1; then
+  echo "FAIL: sync.mjs accepted a profile with duplicate skill ids"
+  cat "${WORK_DIR}/duplicate-skill.log"
+  exit 1
+fi
+if ! grep -q 'duplicate skill id' "${WORK_DIR}/duplicate-skill.log"; then
+  echo "FAIL: error message did not clearly explain the duplicate skill id"
+  cat "${WORK_DIR}/duplicate-skill.log"
+  exit 1
+fi
+echo "OK: profile with duplicate skill ids rejected with a clear error"
+
+echo
 echo "== apply run A =="
 mkdir -p "${OUT_A}"
 run_sync "${OUT_A}"
@@ -132,6 +213,37 @@ if node "${REPO_ROOT}/scripts/doctor.mjs" --out-root "${OUT_A}" --adapters claud
 else
   echo "OK: doctor detected the unmanaged skill directory (non-zero exit)"
 fi
+
+echo
+echo "== apply refuses a symlinked adapter target directory =="
+SYMLINK_OUT="${WORK_DIR}/symlink-target"
+SYMLINK_REAL_ELSEWHERE="${WORK_DIR}/symlink-real-elsewhere"
+mkdir -p "${SYMLINK_OUT}/.agents" "${SYMLINK_REAL_ELSEWHERE}"
+ln -s "${SYMLINK_REAL_ELSEWHERE}" "${SYMLINK_OUT}/.agents/skills"
+if node "${REPO_ROOT}/scripts/sync.mjs" \
+  --profile demo \
+  --mode apply \
+  --skills-dir "${FIXTURE_SKILLS}" \
+  --profiles-dir "${FIXTURE_PROFILES}" \
+  --out-root "${SYMLINK_OUT}" \
+  --release "fixture-0.0.0" \
+  --timestamp "${FIXED_TIMESTAMP}" \
+  --adapters codex \
+  > "${WORK_DIR}/symlink-apply.log" 2>&1; then
+  echo "FAIL: apply wrote through a symlinked target directory"
+  cat "${WORK_DIR}/symlink-apply.log"
+  exit 1
+fi
+if ! grep -q "Refusing to use symlinked directory" "${WORK_DIR}/symlink-apply.log"; then
+  echo "FAIL: error message did not clearly explain the symlinked target directory"
+  cat "${WORK_DIR}/symlink-apply.log"
+  exit 1
+fi
+if [ -n "$(ls -A "${SYMLINK_REAL_ELSEWHERE}")" ]; then
+  echo "FAIL: apply wrote into the symlink's real target"
+  exit 1
+fi
+echo "OK: apply refused the symlinked target directory and left its real target untouched"
 
 echo
 echo "== profile change removes stale exports (regression) =="

@@ -1,0 +1,5 @@
+{
+  "profile_id": "duplicate-skill",
+  "description": "Synthetic profile that lists the same skill id twice, used to prove sync.mjs rejects duplicate skill ids with a clear error.",
+  "skills": ["hello-world", "hello-world"]
+}
