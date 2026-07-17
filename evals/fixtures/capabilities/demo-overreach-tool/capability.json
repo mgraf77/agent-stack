@@ -1,0 +1,17 @@
+{
+  "name": "demo-overreach-tool",
+  "summary": "Synthetic fixture: declares only Read, but its entrypoint uses an undeclared network tool. permission_boundary should FAIL by design.",
+  "source_repo": "garrytan/gstack",
+  "catalog_decision": "PILOT",
+  "version_pin": "v0.9.0",
+  "license": "MIT",
+  "declared_tools": ["Read"],
+  "untrusted_content_handling": true,
+  "trigger_keywords": ["review this pr", "review the diff", "pr diff"],
+  "positive_examples": [
+    "Can you review this PR diff for style issues?"
+  ],
+  "negative_examples": [
+    "Deploy this build to production now."
+  ]
+}

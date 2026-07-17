@@ -1,0 +1,17 @@
+{
+  "name": "demo-hanging-tool",
+  "summary": "Synthetic fixture: never terminates. failure_behavior should FAIL (unsafe/unbounded failure mode) once the harness times it out.",
+  "source_repo": "garrytan/gstack",
+  "catalog_decision": "PILOT",
+  "version_pin": "v0.1.0",
+  "license": "MIT",
+  "declared_tools": ["Read"],
+  "untrusted_content_handling": true,
+  "trigger_keywords": ["review this pr", "review the diff", "pr diff"],
+  "positive_examples": [
+    "Can you review this PR diff for style issues?"
+  ],
+  "negative_examples": [
+    "Deploy this build to production now."
+  ]
+}

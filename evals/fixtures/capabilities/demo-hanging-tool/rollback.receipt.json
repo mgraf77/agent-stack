@@ -1,0 +1,8 @@
+{
+  "capability": "demo-hanging-tool",
+  "source_repo": "garrytan/gstack",
+  "version_pin": "v0.1.0",
+  "catalog_decision": "PILOT",
+  "rollback_method": "Remove the capability entry from the profile and delete this fixture directory; no state migrations required.",
+  "date_recorded": "2026-07-17"
+}

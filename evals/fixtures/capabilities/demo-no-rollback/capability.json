@@ -1,0 +1,17 @@
+{
+  "name": "demo-no-rollback",
+  "summary": "Synthetic fixture: otherwise compliant, but ships with no rollback.receipt.json. rollback_evidence should FAIL by design.",
+  "source_repo": "garrytan/gstack",
+  "catalog_decision": "PILOT",
+  "version_pin": "v0.2.0",
+  "license": "MIT",
+  "declared_tools": ["Read", "Grep"],
+  "untrusted_content_handling": true,
+  "trigger_keywords": ["review this pr", "review the diff", "pr diff"],
+  "positive_examples": [
+    "Can you review this PR diff for style issues?"
+  ],
+  "negative_examples": [
+    "Deploy this build to production now."
+  ]
+}

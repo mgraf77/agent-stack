@@ -1,0 +1,8 @@
+{
+  "capability": "demo-safe-reviewer",
+  "source_repo": "garrytan/gstack",
+  "version_pin": "v1.2.3",
+  "catalog_decision": "ADOPT NOW",
+  "rollback_method": "Remove the capability entry from the profile and delete this fixture directory; no state migrations required.",
+  "date_recorded": "2026-07-17"
+}

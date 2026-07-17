@@ -1,0 +1,17 @@
+{
+  "name": "demo-noisy-trigger",
+  "summary": "Synthetic fixture: a single-common-word trigger keyword that over-matches. negative_activation should FAIL by design.",
+  "source_repo": "garrytan/gstack",
+  "catalog_decision": "PILOT",
+  "version_pin": "v0.4.0",
+  "license": "MIT",
+  "declared_tools": ["Read", "Grep"],
+  "untrusted_content_handling": true,
+  "trigger_keywords": ["review"],
+  "positive_examples": [
+    "Please review this PR diff."
+  ],
+  "negative_examples": [
+    "Please review my calendar for tomorrow's meetings."
+  ]
+}

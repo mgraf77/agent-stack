@@ -1,0 +1,17 @@
+{
+  "name": "demo-failing-tool",
+  "summary": "Synthetic fixture: exits nonzero with a clear diagnostic. failure_behavior should PASS (fails safely).",
+  "source_repo": "garrytan/gstack",
+  "catalog_decision": "PILOT",
+  "version_pin": "v0.1.0",
+  "license": "MIT",
+  "declared_tools": ["Read"],
+  "untrusted_content_handling": true,
+  "trigger_keywords": ["review this pr", "review the diff", "pr diff"],
+  "positive_examples": [
+    "Can you review this PR diff for style issues?"
+  ],
+  "negative_examples": [
+    "Deploy this build to production now."
+  ]
+}
