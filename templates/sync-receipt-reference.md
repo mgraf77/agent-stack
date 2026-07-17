@@ -11,7 +11,7 @@ fields. A filled example is in `examples/sync-receipt.example.json`.
 ```json
 {
   "receiptVersion": "1",
-  "profile": "<profile_id from profiles/<profile_id>.json>",
+  "profile": "<the `profile` value from the matching profiles/<name>.json>",
   "sourceRelease": "<the --release value passed to sync.mjs, e.g. a tag or commit>",
   "adapter": { "id": "<adapter id, e.g. claude-code or codex>", "targetDir": "<e.g. .claude/skills>" },
   "generatedAt": "<ISO-8601 timestamp of the apply run>",

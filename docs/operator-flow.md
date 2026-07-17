@@ -25,10 +25,10 @@ How a task actually moves through the tools, end to end.
 
 Skill selection happens once, at pin time, not once per task:
 
-- A profile (`profiles/<profile_id>.json`) is a curated, named list of
-  capabilities for a project type — e.g. `core` vs. `product-build`. There
-  is no arbitrary cap on how many it can include; scope comes from picking
-  the right profile, not from a limit.
+- A profile (`profiles/<name>.json`, filename matching its `profile`
+  field) is a curated, named list of skills for a project type — e.g.
+  `core` vs. `product-build`. There is no arbitrary cap on how many it can
+  include; scope comes from picking the right profile, not from a limit.
 - Pinning a profile (see `docs/onboarding.md` §1) runs
   `node scripts/sync.mjs --profile <id> --mode apply --out-root <product-repo>`,
   which replaces `.claude/skills/` and `.agents/skills/` in the product

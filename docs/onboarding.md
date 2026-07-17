@@ -22,16 +22,17 @@ or running it as a service.
 1. Agent Stack cuts tagged releases (`vX.Y.Z`) on `main`. See
    `release/CHECKLIST.md`.
 2. A product repo picks one profile that matches its project type —
-   `profiles/<profile_id>.json` in this repo (e.g. `core`, `product-build`;
-   see `profiles/README.md`). There is no arbitrary skill cap: a profile
-   includes every capability that's relevant to that project type, and
-   nothing else.
+   `profiles/<name>.json` in this repo, where the filename matches that
+   record's `profile` field (e.g. `core`, `product-build`; see
+   `profiles/README.md`). There is no arbitrary skill cap: a profile
+   includes every skill that's relevant to that project type, and nothing
+   else.
 3. From a local checkout of this repo at the tag you're pinning to, preview
    the sync, then apply it against the product repo:
 
    ```
-   node scripts/sync.mjs --profile <profile-id> --mode dry-run --out-root /path/to/product-repo
-   node scripts/sync.mjs --profile <profile-id> --mode apply   --out-root /path/to/product-repo --release <tag>
+   node scripts/sync.mjs --profile <profile-name> --mode dry-run --out-root /path/to/product-repo
+   node scripts/sync.mjs --profile <profile-name> --mode apply   --out-root /path/to/product-repo --release <tag>
    ```
 
    `apply` replaces `.claude/skills/` and `.agents/skills/` in the product

@@ -29,7 +29,7 @@ If a newly pinned release causes a problem in a product repo:
 2. Check out this repo (Agent Stack) at that earlier tag/commit locally.
 3. Re-run sync against the product repo, pointed at that release:
    ```
-   node scripts/sync.mjs --profile <same-profile-id> --mode apply --out-root /path/to/product-repo --release <earlier-tag>
+   node scripts/sync.mjs --profile <same-profile-name> --mode apply --out-root /path/to/product-repo --release <earlier-tag>
    ```
    This overwrites the current synced skills and receipt with the
    known-good ones.
