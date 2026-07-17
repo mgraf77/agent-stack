@@ -1,0 +1,5 @@
+{
+  "profile": "with-extra",
+  "description": "Synthetic profile used only by distribution sync fixtures/tests. Selects everything demo.json selects plus one extra skill, to exercise the profile-change/stale-export regression test.",
+  "skills": ["hello-world", "demo-tool", "legacy-only"]
+}

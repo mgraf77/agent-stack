@@ -134,4 +134,53 @@ else
 fi
 
 echo
+echo "== profile change removes stale exports (regression) =="
+OUT_C="${WORK_DIR}/run-c"
+mkdir -p "${OUT_C}"
+
+# Apply a profile with an extra skill first...
+node "${REPO_ROOT}/scripts/sync.mjs" \
+  --profile with-extra \
+  --mode apply \
+  --skills-dir "${FIXTURE_SKILLS}" \
+  --profiles-dir "${FIXTURE_PROFILES}" \
+  --out-root "${OUT_C}" \
+  --release "fixture-0.0.0" \
+  --timestamp "${FIXED_TIMESTAMP}" \
+  > "${OUT_C}.with-extra.sync.log"
+
+if [ ! -d "${OUT_C}/.agents/skills/legacy-only" ] || [ ! -d "${OUT_C}/.claude/skills/legacy-only" ]; then
+  echo "FAIL: setup for regression test did not export legacy-only as expected"
+  exit 1
+fi
+
+# ...then apply the normal profile that no longer selects that skill.
+node "${REPO_ROOT}/scripts/sync.mjs" \
+  --profile demo \
+  --mode apply \
+  --skills-dir "${FIXTURE_SKILLS}" \
+  --profiles-dir "${FIXTURE_PROFILES}" \
+  --out-root "${OUT_C}" \
+  --release "fixture-0.0.0" \
+  --timestamp "${FIXED_TIMESTAMP}" \
+  > "${OUT_C}.demo.sync.log"
+
+if [ -e "${OUT_C}/.agents/skills/legacy-only" ] || [ -e "${OUT_C}/.claude/skills/legacy-only" ]; then
+  echo "FAIL: legacy-only skill from prior profile survived the profile change"
+  exit 1
+fi
+echo "OK: prior-profile-only skill (legacy-only) removed after switching to demo"
+
+if diff -r "${OUT_C}/.agents/skills" "${OUT_B}/.agents/skills" > /dev/null; then
+  echo "OK: .agents/skills after profile change matches a clean demo-only export"
+else
+  echo "FAIL: .agents/skills after profile change does not match a clean demo-only export"
+  diff -r "${OUT_C}/.agents/skills" "${OUT_B}/.agents/skills" || true
+  exit 1
+fi
+
+node "${REPO_ROOT}/scripts/doctor.mjs" --out-root "${OUT_C}"
+echo "OK: doctor passes after profile change"
+
+echo
 echo "ALL CHECKS PASSED"

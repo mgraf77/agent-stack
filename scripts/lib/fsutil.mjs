@@ -1,5 +1,30 @@
-import { readdirSync, mkdirSync, copyFileSync, chmodSync, rmSync } from 'node:fs';
+import { readdirSync, mkdirSync, copyFileSync, chmodSync, rmSync, lstatSync } from 'node:fs';
 import { join, relative, dirname, sep } from 'node:path';
+
+// Throws if path exists and is itself a symlink. Used to reject a symlinked
+// adapter target directory before any write or traversal touches it — a
+// symlinked target could otherwise cause sync/doctor to silently read or
+// write through it to an arbitrary location.
+export function assertNotSymlink(path) {
+  let stat;
+  try {
+    stat = lstatSync(path);
+  } catch (err) {
+    if (err.code === 'ENOENT') return;
+    throw err;
+  }
+  if (stat.isSymbolicLink()) {
+    throw new Error(`Refusing to use symlinked directory: ${path}`);
+  }
+}
+
+// Deletes and recreates dir so it exactly matches what's written after this
+// call — no leftovers from a prior profile/run can survive.
+export function replaceDirectory(dir) {
+  assertNotSymlink(dir);
+  rmSync(dir, { recursive: true, force: true });
+  mkdirSync(dir, { recursive: true });
+}
 
 // Recursively lists files under rootDir as sorted, POSIX-style relative paths
 // so output is stable across platforms. Throws if a symlink is found —
@@ -32,6 +57,7 @@ export function listFilesSortedPosix(rootDir) {
 // contents entirely so re-running sync never leaves stale files behind.
 // Returns the sorted list of POSIX-relative file paths that were copied.
 export function copyTreeDeterministic(srcDir, destDir) {
+  assertNotSymlink(destDir);
   rmSync(destDir, { recursive: true, force: true });
   mkdirSync(destDir, { recursive: true });
 

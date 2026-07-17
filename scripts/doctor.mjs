@@ -6,11 +6,11 @@
 // Usage:
 //   node scripts/doctor.mjs [--out-root DIR] [--adapters-dir DIR] [--adapters codex,claude-code]
 
-import { existsSync, readFileSync, lstatSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { sha256OfFile } from './lib/checksum.mjs';
-import { listFilesSortedPosix } from './lib/fsutil.mjs';
+import { listFilesSortedPosix, assertNotSymlink } from './lib/fsutil.mjs';
 import { loadAdapters, computeReceiptChecksum } from './lib/sync-core.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -44,6 +44,12 @@ function checkSymlinks(dir, problems) {
 function doctorAdapter(adapter, outRoot) {
   const targetDir = join(outRoot, adapter.targetDir);
   const problems = [];
+
+  try {
+    assertNotSymlink(targetDir);
+  } catch (err) {
+    return { adapter: adapter.id, ok: false, problems: [err.message] };
+  }
 
   if (!existsSync(targetDir)) {
     return { adapter: adapter.id, ok: false, problems: [`Target directory missing: ${targetDir}`] };

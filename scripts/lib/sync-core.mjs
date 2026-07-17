@@ -42,6 +42,19 @@ export function loadProfile(profilePath) {
   if (!Array.isArray(profile.skills) || profile.skills.length === 0) {
     throw new Error(`Profile at ${profilePath} must declare a non-empty "skills" array`);
   }
+  const seen = new Set();
+  const duplicates = new Set();
+  for (const id of profile.skills) {
+    if (seen.has(id)) {
+      duplicates.add(id);
+    }
+    seen.add(id);
+  }
+  if (duplicates.size > 0) {
+    throw new Error(
+      `Profile at ${profilePath} lists duplicate skill id(s): ${[...duplicates].sort().join(', ')}`,
+    );
+  }
   return profile;
 }
 

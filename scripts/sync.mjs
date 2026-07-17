@@ -20,10 +20,10 @@
 //                     determinism fixture).
 //   --adapters       Comma-separated adapter ids to sync. Default: all adapters found.
 
-import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { copyTreeDeterministic } from './lib/fsutil.mjs';
+import { copyTreeDeterministic, replaceDirectory } from './lib/fsutil.mjs';
 import {
   loadAdapters,
   resolveProfilePath,
@@ -158,7 +158,10 @@ function main() {
 
   adapters.forEach((adapter, i) => {
     const targetDir = join(outRoot, adapter.targetDir);
-    mkdirSync(targetDir, { recursive: true });
+    // Replace the whole managed target directory (not just per-skill
+    // subdirectories) so skills exported by a prior profile that are absent
+    // from the newly selected profile do not survive the run.
+    replaceDirectory(targetDir);
     for (const skill of skills) {
       copyTreeDeterministic(skill.sourceDir, join(targetDir, skill.id));
     }
