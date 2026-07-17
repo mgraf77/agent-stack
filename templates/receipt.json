@@ -1,0 +1,9 @@
+{
+  "agent_stack_release": "<vX.Y.Z>",
+  "agent_stack_commit": "<full git commit sha pinned>",
+  "profile": "<profile name copied from profiles/<name>/>",
+  "skills": ["<skill names copied as part of the profile>"],
+  "synced_at": "<YYYY-MM-DD>",
+  "synced_by": "<claude-code | codex | manual>",
+  "target_path": "<local path in this product repo the profile was copied into>"
+}
