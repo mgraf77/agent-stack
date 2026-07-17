@@ -11,7 +11,10 @@ Scope:
 - Only touch what this issue requires. If you find unrelated problems,
   note them at the end instead of fixing them here.
 - Use whatever skills are already available in this repo's synced profile;
-  don't ask me which skill to use.
+  don't ask me which skill to use. If you suspect the synced skills are
+  stale or drifted, run `node scripts/doctor.mjs` from a local Agent Stack
+  checkout against this repo and tell me what it reports instead of
+  guessing.
 
 When you're done:
 1. Run the relevant tests/linters and fix failures caused by your change.

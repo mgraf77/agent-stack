@@ -1,8 +1,8 @@
 # Operator Onboarding
 
 This is the practical guide for running Agent Stack day to day. It assumes
-you (Michael) are working across product repos (AccentOS, MichaelOS, BetIQ,
-future ones) with Claude Code, Codex, ChatGPT, and GitHub.
+you (Michael) are working across product repos (AccentOS, BetIQ, future
+ones) with Claude Code, Codex, ChatGPT, and GitHub.
 
 For deeper detail, see:
 - `docs/operator-flow.md` — how requests move between tools, and how skills
@@ -10,33 +10,65 @@ For deeper detail, see:
 - `docs/pilot.md` — the first three-task pilot
 - `release/CHECKLIST.md` — cutting and rolling back a release
 - `templates/prompts/` — copy-paste prompts
+- `templates/sync-receipt-reference.md` — what `sync-receipt.json` contains
+  and why
 
 ## 1. Pinning a release and consuming a profile
 
-Agent Stack is consumed by **deterministic copy**, not by cloning it into a
-product repo or symlinking it. Nothing here runs as a live service.
+Agent Stack is consumed by **deterministic copy**, run locally via
+`scripts/sync.mjs` — not by cloning it into a product repo, symlinking it,
+or running it as a service.
 
 1. Agent Stack cuts tagged releases (`vX.Y.Z`) on `main`. See
    `release/CHECKLIST.md`.
-2. A product repo picks one profile that matches its project type (e.g. a
-   "product-build" profile). Profiles live under `profiles/<name>/` in this
-   repo and are out of scope for this doc — they are populated by a separate
-   lane.
-3. To adopt or refresh a pin, ask Claude Code or Codex (inside the product
-   repo) to copy the chosen profile's skill files from the pinned Agent
-   Stack tag into the product repo's local skill path, then write a receipt.
-   The receipt format is in `templates/receipt.json`; a filled example is in
-   `examples/receipt.example.json`.
-4. Commit the copied files and the receipt together in the product repo.
-   That commit is the pin — it fully determines what release/profile/commit
-   the project is running, with no external lookup required.
+2. A product repo picks one profile that matches its project type —
+   `profiles/<profile_id>.json` in this repo (e.g. `core`, `product-build`;
+   see `profiles/README.md`). There is no arbitrary skill cap: a profile
+   includes every capability that's relevant to that project type, and
+   nothing else.
+3. From a local checkout of this repo at the tag you're pinning to, preview
+   the sync, then apply it against the product repo:
 
-There is no sync daemon and no CLI to install. "Pinning" is: pick a tag,
-copy files, write a receipt, commit. Re-running the same prompt against a
-newer tag is how you upgrade; re-running it against an older tag is how you
-roll back (see `release/CHECKLIST.md`).
+   ```
+   node scripts/sync.mjs --profile <profile-id> --mode dry-run --out-root /path/to/product-repo
+   node scripts/sync.mjs --profile <profile-id> --mode apply   --out-root /path/to/product-repo --release <tag>
+   ```
 
-## 2. Asking for work without choosing skills manually
+   `apply` replaces `.claude/skills/` and `.agents/skills/` in the product
+   repo with exactly the selected profile's skills (deterministic copy, no
+   symlinks) and writes a `sync-receipt.json` into each of those
+   directories recording the profile, the release, and a checksum per
+   skill file. See `templates/sync-receipt-reference.md` for the shape and
+   `examples/sync-receipt.example.json` for a filled example.
+4. In the product repo, commit the exported skill directories together
+   with their `sync-receipt.json` files. That commit is the pin — it fully
+   determines what release/profile the project is running, with no
+   external lookup required.
+
+Re-running `apply` against a newer tag is how you upgrade; re-running it
+against an older tag is how you roll back (see `release/CHECKLIST.md`).
+
+## 2. Checking for drift: doctor
+
+```
+node scripts/doctor.mjs --out-root /path/to/product-repo
+```
+
+`doctor` re-walks the committed `.claude/skills/` and `.agents/skills/`
+directories, recomputes each file's checksum, and compares it against what
+`sync-receipt.json` recorded. It exits non-zero and lists the problem if:
+a skill file was hand-edited after sync, a skill listed in the receipt is
+missing, a skill directory on disk isn't in the receipt (stale, left over
+from a prior profile), the receipt itself was hand-edited, or a target
+directory is a symlink.
+
+Run it before starting a task, to confirm the pin you're relying on is
+still intact, and as part of reviewing any PR that touched
+`.claude/skills/` or `.agents/skills/` directly. `doctor` never writes
+anything — if it flags drift, fix it with `sync.mjs --mode apply` (step 3
+above), not by hand-editing the flagged files.
+
+## 3. Asking for work without choosing skills manually
 
 You do not select skills per task. The profile already decided which skills
 are available in the product repo when it was pinned. Your job per task is
@@ -47,38 +79,40 @@ Claude Code / Codex reads the skills already synced into the repo (per the
 pinned profile) and self-activates whichever are relevant to what you asked
 for, the same way any other skill or instruction file is picked up. If a
 task needs a capability the current profile doesn't include, that's a
-signal to refresh the pin (step 3 above) or file an issue against the
-catalog/profile lanes — not something to solve by hand-picking skills mid
-task.
+signal to refresh the pin against a different/updated profile (§1 above) —
+not something to solve by hand-picking a skill in for one session.
 
-## 3. Who does what
+## 4. Who does what
 
 | Tool | Role |
 |---|---|
-| **ChatGPT** | Thinking partner. Scopes the task, writes the issue/prompt text, decides what and why. No repo write access. |
+| **ChatGPT** | Planning and governance. Scopes the task, writes the issue/prompt text, decides what and why, and is where you think through tradeoffs before code is touched. Treat its output as a draft issue, not an instruction Claude Code/Codex must follow verbatim. |
 | **Claude Code** | Primary implementer. Takes a bounded issue, implements it in a branch, tests, commits, opens a PR. |
 | **Codex** | Independent second opinion. Reviews Claude's PRs against the actual diff (not Claude's own summary), or independently implements/remediates when asked. |
 | **GitHub** | System of record. Issues, branches, commits, PRs, and releases are the canonical history — not a separate tracker. |
-| **MichaelOS (later)** | Future personal control plane that may tie these together. Not required and not built yet — see the no-overengineering rule below. |
 
 The loop for a normal task: ChatGPT (or you) writes the issue → Claude Code
 implements → Codex reviews → you merge on GitHub. Any tool can flip roles
 (Codex can implement, Claude Code can review) — the roles above are the
 default assignment, not a hard rule.
 
-## 4. Free-first rule
+## 5. Free-first rule
 
 Normal operation must not require anything beyond your existing ChatGPT and
-Claude usage plus GitHub. No paid dashboards, hosted services, or paid
-automation are required to pin a release, run a task, or complete the
-pilot. If a catalog entry is marked PILOT/ADOPT and costs money beyond that,
-it is optional and evaluated separately — never a prerequisite.
+Claude usage plus GitHub. `sync.mjs`/`doctor.mjs` are dependency-free local
+Node scripts, not a hosted service, daemon, or paid tool. No paid
+dashboards, hosted services, or paid automation are required to pin a
+release, run a task, or complete the pilot. If a catalog entry is marked
+PILOT/ADOPT and costs money beyond that, it is optional and evaluated
+separately — never a prerequisite.
 
-## 5. No-overengineering rule
+## 6. No-overengineering rule
 
 Do not stand up a dashboard, hosted service, database, or a universal CLI
 before the first three-task pilot (`docs/pilot.md`) is complete and
 reviewed. Everything in this doc works with: a text editor, git, GitHub,
-and a chat with Claude Code or Codex. If the pilot proves the flow is too
-manual, that's a real finding to act on afterward — not something to
-pre-solve now.
+the local `sync.mjs`/`doctor.mjs` pair, and a chat with Claude Code or
+Codex. There is also no arbitrary cap on how many skills a profile can
+carry — scope is controlled by picking the right profile, not by an
+artificial limit. If the pilot proves the flow is too manual, that's a
+real finding to act on afterward — not something to pre-solve now.

@@ -23,14 +23,20 @@ or removes something a project may already be pinned to.
 
 If a newly pinned release causes a problem in a product repo:
 
-1. Identify the last known-good tag/commit (check that project's receipt
-   history in its own repo, or `release/CHANGELOG.md` here).
-2. Ask Claude Code or Codex, in the product repo, to re-copy the profile
-   from that earlier tag/commit, overwriting the current synced files.
-3. Update the receipt (`templates/receipt.json` shape) to record the
-   rolled-back release, commit, and date, with a one-line reason.
-4. Commit the rollback in the product repo like any other change — it goes
-   through the same review as anything else.
+1. Identify the last known-good tag/commit — check the `sourceRelease`
+   field in that product repo's committed `sync-receipt.json` history, or
+   `release/CHANGELOG.md` here.
+2. Check out this repo (Agent Stack) at that earlier tag/commit locally.
+3. Re-run sync against the product repo, pointed at that release:
+   ```
+   node scripts/sync.mjs --profile <same-profile-id> --mode apply --out-root /path/to/product-repo --release <earlier-tag>
+   ```
+   This overwrites the current synced skills and receipt with the
+   known-good ones.
+4. Run `node scripts/doctor.mjs --out-root /path/to/product-repo` to
+   confirm the rollback landed clean (no drift, no leftover files).
+5. Commit the rollback in the product repo like any other change, with a
+   one-line reason — it goes through the same review as anything else.
 
 ## Rolling back Agent Stack itself
 

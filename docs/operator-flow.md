@@ -25,10 +25,20 @@ How a task actually moves through the tools, end to end.
 
 Skill selection happens once, at pin time, not once per task:
 
-- A profile is a curated, named set of skills for a project type (e.g. a
-  web product vs. a data pipeline vs. this repo's own maintenance).
-- Pinning a profile (see `docs/onboarding.md` §1) copies that set into the
-  product repo and records exactly what was copied in a receipt.
+- A profile (`profiles/<profile_id>.json`) is a curated, named list of
+  capabilities for a project type — e.g. `core` vs. `product-build`. There
+  is no arbitrary cap on how many it can include; scope comes from picking
+  the right profile, not from a limit.
+- Pinning a profile (see `docs/onboarding.md` §1) runs
+  `node scripts/sync.mjs --profile <id> --mode apply --out-root <product-repo>`,
+  which replaces `.claude/skills/` and `.agents/skills/` in the product
+  repo with exactly that profile's skills and writes a `sync-receipt.json`
+  into each, recording exactly what was copied.
+- `node scripts/doctor.mjs --out-root <product-repo>` is the drift check:
+  it recomputes checksums against the receipt and fails loudly if the
+  synced skills were hand-edited, partially removed, or left stale from an
+  earlier profile. Run it before trusting a pin, not after something looks
+  wrong.
 - From then on, every Claude Code / Codex session in that repo already has
   the relevant skills on its skill path. You just describe the task.
 
@@ -39,10 +49,10 @@ session.
 
 ## Division of responsibility (detail)
 
-- **ChatGPT** has no repo access in this flow. It's for scoping,
-  drafting issue text, and thinking through tradeoffs before any code is
-  touched. Treat its output as a draft issue, not an instruction Claude
-  Code/Codex must follow verbatim.
+- **ChatGPT** is the planning and governance layer: scoping, drafting
+  issue text, and thinking through tradeoffs before any code is touched.
+  Treat its output as a draft issue, not an instruction Claude Code/Codex
+  must follow verbatim.
 - **Claude Code** is the default implementer for bounded, in-repo work: one
   issue, one branch, one PR. It should stay inside the paths the issue
   actually calls for.
@@ -51,5 +61,3 @@ session.
   Never let the same tool review its own PR — that defeats the point.
 - **GitHub** holds all durable state: issues, branches, PRs, review
   comments, and releases. If it isn't on GitHub, it isn't real work yet.
-- **MichaelOS** is a future project, not part of this loop today. Don't
-  wait on it and don't design current work to depend on it.
