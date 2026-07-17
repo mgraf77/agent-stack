@@ -1,8 +1,17 @@
 {
-  "profile_id": "product-build",
+  "profile": "product-build",
   "display_name": "Product build",
-  "description": "Core plus everything relevant to actively building and shipping product code: CI linting and browser regression evidence, on top of the review, guardrail, evaluation, packaging, scanning, and spec capabilities every project gets.",
+  "description": "Core plus everything relevant to actively building and shipping product code with a UI: browser QA on top of orientation, spec discipline, evidence before done, PR feedback triage, secret safety, and handoff, backed by CI linting and browser regression evidence catalogue capabilities in addition to core's.",
   "target_projects": ["*"],
+  "skills": [
+    "orientation",
+    "plan-spec",
+    "evidence-before-done",
+    "pr-feedback",
+    "secret-safety",
+    "browser-qa",
+    "handoff"
+  ],
   "capabilities": [
     "gstack-review-workflow",
     "claude-guardrails-lite",

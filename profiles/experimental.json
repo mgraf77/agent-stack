@@ -1,8 +1,15 @@
 {
-  "profile_id": "experimental",
+  "profile": "experimental",
   "display_name": "Experimental",
-  "description": "Sandbox lane for PILOT-status capabilities under active trial. Lower bar than core: guardrails still apply, but capabilities here are not yet promoted to a project profile.",
+  "description": "Sandbox lane for PILOT-status capabilities under active trial. Lower bar than core on domain (no UI assumed), but the same safety-discipline skills still apply: orientation, spec discipline, evidence before done, secret safety, and handoff.",
   "target_projects": ["*"],
+  "skills": [
+    "orientation",
+    "plan-spec",
+    "evidence-before-done",
+    "secret-safety",
+    "handoff"
+  ],
   "capabilities": [
     "claude-guardrails-lite",
     "openspec-lightweight-workflow",
@@ -11,5 +18,5 @@
     "jcode-benchmark-pilot"
   ],
   "policies": ["free-first.md", "promotion-lifecycle.md"],
-  "notes": "Run only in isolated worktrees/containers with no production credentials. Promote a capability out of experimental by adding it to a project profile once its pilot succeeds."
+  "notes": "Run only in isolated worktrees/containers with no production credentials. Promote a capability out of experimental by adding it to a project profile once its pilot succeeds. pr-feedback/browser-qa omitted: pilots here are bounded coding-agent trials, not PR-triage or UI work."
 }

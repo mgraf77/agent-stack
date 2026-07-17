@@ -2,33 +2,66 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://agent-stack.local/schemas/sync-release-receipt.schema.json",
   "title": "Sync/release receipt",
-  "description": "A record of one profile sync or release event, stored as catalog/receipts/<receipt_id>.json.",
+  "description": "The exact shape of sync-receipt.json as written by scripts/sync.mjs (on --mode apply) and verified by scripts/doctor.mjs, one per adapter target directory. There is exactly one receipt format in this repo — this schema documents it; it does not define a second, competing shape.",
   "type": "object",
-  "required": ["receipt_id", "type", "date", "profile", "target_project", "validated"],
+  "required": ["receiptVersion", "profile", "sourceRelease", "adapter", "generatedAt", "skills", "receiptChecksum"],
   "properties": {
-    "receipt_id": {
+    "receiptVersion": {
       "type": "string",
-      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
-      "description": "Must match the filename without extension. Recommended: <date>-<profile>-<type>."
+      "description": "Receipt format version, e.g. \"1\"."
     },
-    "type": { "type": "string", "enum": ["sync", "release"] },
-    "date": { "type": "string", "format": "date" },
-    "profile": { "type": "string", "description": "profile_id this receipt applies to." },
-    "target_project": { "type": "string" },
-    "source_commit": {
+    "profile": {
       "type": "string",
-      "description": "Agent Stack git commit SHA the sync/release was generated from."
+      "description": "profiles/<profile>.json 'profile' value that was exported."
     },
-    "files_changed": {
+    "sourceRelease": {
+      "type": "string",
+      "description": "Source release/version or commit this export was generated from. \"unreleased\" is the current placeholder until this repo cuts real releases."
+    },
+    "adapter": {
+      "type": "object",
+      "required": ["id", "targetDir"],
+      "properties": {
+        "id": { "type": "string", "description": "adapters/<id>/adapter.json id, e.g. \"codex\" or \"claude-code\"." },
+        "targetDir": { "type": "string", "description": "Adapter export target directory, e.g. \".agents/skills\"." }
+      },
+      "additionalProperties": false
+    },
+    "generatedAt": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$",
+      "description": "ISO-8601 UTC timestamp this receipt was generated at."
+    },
+    "skills": {
       "type": "array",
-      "items": { "type": "string" }
+      "items": {
+        "type": "object",
+        "required": ["id", "files", "skillChecksum"],
+        "properties": {
+          "id": { "type": "string" },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["path", "sha256"],
+              "properties": {
+                "path": { "type": "string" },
+                "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+              },
+              "additionalProperties": false
+            }
+          },
+          "skillChecksum": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+        },
+        "additionalProperties": false
+      },
+      "description": "One entry per exported skill, in the order scripts/sync.mjs resolved them (sorted by id)."
     },
-    "validated": {
-      "type": "boolean",
-      "description": "Whether scripts/validate.py passed before this receipt was recorded."
-    },
-    "validator": { "type": "string", "description": "Command used to validate, e.g. scripts/validate.py." },
-    "notes": { "type": "string" }
+    "receiptChecksum": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "sha256 over profile, sourceRelease, adapter.id, and each skill's skillChecksum — recomputed by scripts/doctor.mjs and scripts/validate.py to detect drift or hand-edits."
+    }
   },
   "additionalProperties": false
 }

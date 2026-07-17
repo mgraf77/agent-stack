@@ -5,15 +5,23 @@ Checks:
   - catalog/repositories.csv matches the expected header and enum.
   - catalog/capabilities/*.json match schemas/capability-record.schema.json
     and stay consistent with catalog/repositories.csv.
-  - profiles/*.json match schemas/project-profile.schema.json and only
-    reference capabilities that exist and list this profile back.
-  - catalog/receipts/*.json match schemas/sync-release-receipt.schema.json
-    and reference a profile that exists.
+  - profiles/*.json match schemas/project-profile.schema.json: 'skills'
+    (the exact array scripts/sync.mjs exports) has no duplicates and only
+    kebab-case ids, resolving against skills/ on disk when that directory
+    exists; 'capabilities' only reference known capability records that
+    list this profile back.
+  - catalog/receipts/*.json match schemas/sync-release-receipt.schema.json,
+    reference a profile that exists, and have their skillChecksum /
+    receiptChecksum values recomputed and compared byte-for-byte against
+    the same algorithm scripts/lib/checksum.mjs uses (sha256 over an
+    ordered list of "label:hex" pairs), to catch drift or hand-edits
+    without needing Node.
 
 No network access, no third-party packages, no API keys.
 """
 
 import csv
+import hashlib
 import json
 import re
 import sys
@@ -23,6 +31,8 @@ ROOT = Path(__file__).resolve().parent.parent
 
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 ID_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
+SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+TIMESTAMP_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$")
 
 CATALOGUE_DECISIONS = {"ADOPT NOW", "PILOT", "HARVEST", "WATCH", "DO NOT USE", "UNRESOLVED"}
 CAPABILITY_STATUSES = {"adopt_now", "pilot", "harvest", "watch"}
@@ -54,6 +64,17 @@ def error(msg):
 
 def warn(msg):
     warnings.append(msg)
+
+
+def sha256_hex(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+def sha256_of_pairs(pairs):
+    # Mirrors scripts/lib/checksum.mjs's sha256OfPairs exactly: sha256 of
+    # "label:hex" lines joined with "\n", independent of object key order.
+    canonical = "\n".join(f"{label}:{hexval}" for label, hexval in pairs)
+    return sha256_hex(canonical.encode("utf-8"))
 
 
 def load_json(path):
@@ -159,26 +180,47 @@ def validate_capabilities(catalogue_by_name):
 
 def validate_profiles(capabilities):
     profiles_dir = ROOT / "profiles"
+    skills_dir = ROOT / "skills"
+    skills_dir_present = skills_dir.is_dir()
     profiles = {}
     if not profiles_dir.exists():
         return profiles
 
-    required = ["profile_id", "display_name", "description", "target_projects", "capabilities"]
+    required = ["profile", "display_name", "description", "target_projects", "skills"]
     for path in sorted(profiles_dir.glob("*.json")):
         record = load_json(path)
         if record is None:
             continue
         check_required(path, record, required)
 
-        profile_id = record.get("profile_id")
+        profile_id = record.get("profile")
         if profile_id and path.stem != profile_id:
-            error(f"{path}: filename does not match profile_id '{profile_id}'")
+            error(f"{path}: filename does not match profile '{profile_id}'")
         if profile_id and not ID_RE.match(profile_id):
-            error(f"{path}: profile_id '{profile_id}' is not kebab-case")
+            error(f"{path}: profile '{profile_id}' is not kebab-case")
 
         target_projects = record.get("target_projects")
         if target_projects is not None and not (isinstance(target_projects, list) and target_projects):
             error(f"{path}: target_projects must be a non-empty array")
+
+        skill_ids = record.get("skills")
+        if skill_ids is not None:
+            if not (isinstance(skill_ids, list) and skill_ids):
+                error(f"{path}: skills must be a non-empty array")
+            else:
+                seen = set()
+                for skill_id in skill_ids:
+                    if not isinstance(skill_id, str) or not ID_RE.match(skill_id):
+                        error(f"{path}: invalid skill id '{skill_id}' (must be kebab-case)")
+                        continue
+                    if skill_id in seen:
+                        error(f"{path}: duplicate skill id '{skill_id}'")
+                        continue
+                    seen.add(skill_id)
+                    if skills_dir_present and not (skills_dir / skill_id / "SKILL.md").is_file():
+                        error(f"{path}: skill '{skill_id}' has no skills/{skill_id}/SKILL.md")
+                if not skills_dir_present:
+                    warn(f"{path}: skills/ not present in this checkout; skill ids checked for format/duplicates only")
 
         cap_ids = record.get("capabilities")
         if cap_ids is not None:
@@ -205,32 +247,84 @@ def validate_receipts(profiles):
     if not receipts_dir.exists():
         return
 
-    required = ["receipt_id", "type", "date", "profile", "target_project", "validated"]
+    required = ["receiptVersion", "profile", "sourceRelease", "adapter", "generatedAt", "skills", "receiptChecksum"]
     for path in sorted(receipts_dir.glob("*.json")):
         record = load_json(path)
         if record is None:
             continue
         check_required(path, record, required)
 
-        receipt_id = record.get("receipt_id")
-        if receipt_id and path.stem != receipt_id:
-            error(f"{path}: filename does not match receipt_id '{receipt_id}'")
-
-        rtype = record.get("type")
-        if rtype is not None and rtype not in {"sync", "release"}:
-            error(f"{path}: type '{rtype}' not in ('sync', 'release')")
-
-        date = record.get("date")
-        if date is not None and not DATE_RE.match(date):
-            error(f"{path}: date '{date}' is not YYYY-MM-DD")
-
         profile = record.get("profile")
         if profile is not None and profile not in profiles:
             error(f"{path}: references unknown profile '{profile}'")
 
-        validated = record.get("validated")
-        if validated is not None and not isinstance(validated, bool):
-            error(f"{path}: validated must be a boolean")
+        generated_at = record.get("generatedAt")
+        if generated_at is not None and not TIMESTAMP_RE.match(generated_at):
+            error(f"{path}: generatedAt '{generated_at}' is not an ISO-8601 UTC timestamp")
+
+        adapter = record.get("adapter")
+        adapter_id = None
+        if isinstance(adapter, dict):
+            for field in ("id", "targetDir"):
+                if not adapter.get(field):
+                    error(f"{path}: adapter.{field} is required")
+            adapter_id = adapter.get("id")
+        elif adapter is not None:
+            error(f"{path}: adapter must be an object")
+
+        skills = record.get("skills")
+        skill_checksum_pairs = []
+        if isinstance(skills, list):
+            for skill in skills:
+                if not isinstance(skill, dict):
+                    error(f"{path}: each skills[] entry must be an object")
+                    continue
+                skill_id = skill.get("id")
+                files = skill.get("files")
+                claimed_skill_checksum = skill.get("skillChecksum")
+                if not skill_id or not isinstance(files, list) or not claimed_skill_checksum:
+                    error(f"{path}: skill entry missing id/files/skillChecksum")
+                    continue
+                file_pairs = []
+                for f in files:
+                    if not isinstance(f, dict) or not f.get("path") or not f.get("sha256"):
+                        error(f"{path}: skill '{skill_id}' has a malformed files[] entry")
+                        continue
+                    if not SHA256_RE.match(f["sha256"]):
+                        error(f"{path}: skill '{skill_id}' file '{f.get('path')}' sha256 is not 64 lowercase hex chars")
+                        continue
+                    file_pairs.append((f["path"], f["sha256"]))
+                if not SHA256_RE.match(claimed_skill_checksum):
+                    error(f"{path}: skill '{skill_id}' skillChecksum is not 64 lowercase hex chars")
+                    continue
+                expected_skill_checksum = sha256_of_pairs(file_pairs)
+                if expected_skill_checksum != claimed_skill_checksum:
+                    error(
+                        f"{path}: skill '{skill_id}' skillChecksum mismatch "
+                        f"(recorded {claimed_skill_checksum}, recomputed {expected_skill_checksum})"
+                    )
+                skill_checksum_pairs.append((f"skill:{skill_id}", claimed_skill_checksum))
+        elif skills is not None:
+            error(f"{path}: skills must be an array")
+
+        claimed_receipt_checksum = record.get("receiptChecksum")
+        if profile is not None and adapter_id is not None and skill_checksum_pairs and claimed_receipt_checksum:
+            expected_receipt_checksum = sha256_of_pairs(
+                [
+                    ("profile", profile),
+                    ("sourceRelease", record.get("sourceRelease", "")),
+                    ("adapter", adapter_id),
+                    *skill_checksum_pairs,
+                ]
+            )
+            if not SHA256_RE.match(claimed_receipt_checksum):
+                error(f"{path}: receiptChecksum is not 64 lowercase hex chars")
+            elif expected_receipt_checksum != claimed_receipt_checksum:
+                error(
+                    f"{path}: receiptChecksum mismatch "
+                    f"(recorded {claimed_receipt_checksum}, recomputed {expected_receipt_checksum}) "
+                    "— receipt may be corrupted or hand-edited"
+                )
 
 
 def main():

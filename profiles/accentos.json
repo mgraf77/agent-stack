@@ -1,8 +1,17 @@
 {
-  "profile_id": "accentos",
+  "profile": "accentos",
   "display_name": "AccentOS",
-  "description": "Core review/guardrail/scanning capabilities plus browser regression evidence for AccentOS. No product-specific or private context; expand as real AccentOS skill needs are identified.",
+  "description": "All seven curated starter skills plus review/guardrail/scanning and browser regression evidence capabilities for AccentOS. No product-specific or private context; expand as real AccentOS-specific compatible capabilities are curated.",
   "target_projects": ["AccentOS"],
+  "skills": [
+    "orientation",
+    "plan-spec",
+    "evidence-before-done",
+    "pr-feedback",
+    "secret-safety",
+    "browser-qa",
+    "handoff"
+  ],
   "capabilities": [
     "gstack-review-workflow",
     "claude-guardrails-lite",
@@ -10,5 +19,5 @@
     "playwright-regression"
   ],
   "policies": ["free-first.md", "promotion-lifecycle.md"],
-  "notes": "Intentionally generic at foundation stage; grow this list as AccentOS-specific compatible capabilities are curated, without any artificial cap."
+  "notes": "Skills/capabilities intentionally match product-build at foundation stage; grow this list as AccentOS-specific compatible capabilities are curated, without any artificial cap."
 }
