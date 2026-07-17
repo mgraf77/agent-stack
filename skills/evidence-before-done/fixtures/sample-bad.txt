@@ -1,0 +1,3 @@
+Fixed the off-by-one in the paginator. Should work now.
+
+Also updated the docs, that should do it for this release.

@@ -1,0 +1,6 @@
+Fixed the off-by-one in the paginator.
+Ran: pytest tests/test_paginator.py -k off_by_one
+Output: 3 passed in 0.12s
+
+This fixes it. Verified: re-ran the original repro script and confirmed
+page 4 now returns the last 2 items instead of an empty list.

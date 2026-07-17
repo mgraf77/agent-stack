@@ -1,0 +1,6 @@
+This is a normal config note.
+
+The API key is loaded from an environment variable at runtime and is never
+written into this file or into version control.
+
+Contact: mybetiq@gmail.com
