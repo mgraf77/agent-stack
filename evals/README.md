@@ -1,13 +1,13 @@
 # Evaluations: free, local promotion gates
 
 A minimal harness that checks a capability (skill, adapter, or profile
-entry) against six required dimensions before it can be promoted. See
-`policies/promotion-policy.md` for the stage rules this feeds.
+entry) against six required dimensions before it can be promoted. See the
+"Local evaluation gates" section of `policies/promotion-lifecycle.md` for
+the stage rules this feeds.
 
 Everything here runs locally and for free — bash, `jq`, and coreutils
-`timeout` only. No provider API key or network call is required. Optional
-provider-backed examples live under `evals/optional/`, disabled by default
-(see that directory's README).
+`timeout` only. No provider API key or network call is required or used
+anywhere in this directory, per `policies/free-first.md`.
 
 ## Run it
 
@@ -72,5 +72,8 @@ document (fake shell commands and a fake secret token) used by the
 ## Promotion record
 
 Use `evals/templates/promotion-record-template.md` to document a
-candidate → trial → approved transition. See
-`policies/promotion-policy.md` for the full stage rules.
+candidate → trial → approved transition. See the "Local evaluation gates"
+section of `policies/promotion-lifecycle.md` for the full stage rules,
+including why a `PILOT`-decision capability in the `experimental` profile
+is not blocked by these checks — they gate the `pilot` → `adopt_now`
+transition, not trial entry.

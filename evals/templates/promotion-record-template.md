@@ -2,6 +2,7 @@
 
 - **Source repo:** `<owner/repo>` (see `catalog/repositories.csv` row for provenance)
 - **Catalog decision:** `<ADOPT NOW | PILOT | HARVEST | WATCH>`
+- **Capability status:** `<adopt_now | pilot | harvest | watch>` (must agree with the catalog decision, per `policies/promotion-lifecycle.md`)
 - **Version pin:** `<tag/commit>`
 - **License:** `<license>`
 - **Declared tools:** `<comma-separated list, matches capability.json declared_tools>`
@@ -14,7 +15,13 @@
 - **Date:** `<YYYY-MM-DD>`
 - **Requested by:** `<name>`
 
-## Eval run
+Entering trial (candidate → trial, `pilot` status, `experimental` profile
+only) does not require the eval run below — see
+`policies/promotion-lifecycle.md`. Only trial → approved (`pilot` →
+`adopt_now`, or adding the capability to any profile beyond
+`experimental`) requires it.
+
+## Eval run (required for trial → approved only)
 
 Command: `bash evals/run.sh --capability <path-to-capability-dir>`
 
