@@ -32,8 +32,9 @@ would in any ordinary terminal.
 ## The ownership boundary
 
 - Herdr owns: the `herdr` binary, its CLI, its socket API, its pane/tab/
-  workspace model, and the `HERDR_ENV=1` proof-of-ownership environment
-  variable it injects into panes it manages.
+  workspace model, and the `HERDR_ENV=1` environment variable it injects
+  into panes it manages as an ownership signal — a check against acting on
+  a session by accident, not a cryptographic guarantee.
 - Agent Stack owns: the decision to *use* that CLI from inside a pane,
   workspace conventions for how multiple agents share a Herdr session
   (coordinator pane, isolated worker panes, one test/log pane), and a

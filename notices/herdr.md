@@ -51,9 +51,13 @@ externally observable interfaces (the `herdr` CLI, and the `HERDR_ENV`,
 processes running inside its managed panes) the same way any end user or
 script author would.
 
-## AGPL boundary
+## AGPL boundary (factual, not a legal opinion)
 
-This repository:
+This is a description of what this repository does, not a legal
+determination about license scope or obligations. Anyone relying on a
+specific licensing conclusion should get their own legal advice.
+
+As a matter of fact, this repository:
 
 - never imports, links against, statically or dynamically embeds, or
   redistributes any Herdr binary or source file;
@@ -62,10 +66,9 @@ This repository:
   its documented CLI/socket interface, exactly as an ordinary user's
   terminal session would.
 
-Under that boundary, Agent Stack's own integration code is not a derivative
-work of Herdr and does not itself carry AGPL's network-copyleft obligation.
 If this integration is ever changed to bundle, statically link, or modify
-Herdr source, that assessment must be redone before merging.
+Herdr source, that would be a materially different situation and must be
+re-reviewed — including a fresh look at licensing — before merging.
 
 ## Installation stays external
 

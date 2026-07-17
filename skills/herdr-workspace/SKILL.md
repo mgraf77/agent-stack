@@ -1,6 +1,6 @@
 ---
 name: herdr-workspace
-description: Workspace conventions for an agent (Claude Code or Codex) running inside a Herdr-managed terminal pane — coordinator/worker pane roles, a blocked/working/done handoff protocol, and safe use of the local herdr CLI. Refuses to issue any Herdr control command unless HERDR_ENV=1 proves the current pane is actually owned by Herdr.
+description: Workspace conventions for an agent (Claude Code or Codex) running inside a Herdr-managed terminal pane — coordinator/worker pane roles, a blocked/working/done handoff protocol, and safe use of the local herdr CLI. Refuses to issue any Herdr control command unless HERDR_ENV=1 signals the current pane is owned by Herdr.
 ---
 
 # Herdr workspace conventions
@@ -13,7 +13,7 @@ skill does not vendor or reimplement Herdr — see
 license, and ownership boundary. This skill only describes how an agent
 should behave *while running inside* a Herdr-managed pane.
 
-## Hard gate: prove you're actually inside Herdr
+## Hard gate: check the ownership signal before acting
 
 Before doing anything in this skill that talks to Herdr (its CLI or its
 local socket), check the environment:
@@ -24,9 +24,12 @@ HERDR_ENV=1
 
 Herdr injects `HERDR_ENV=1` (plus `HERDR_SOCKET_PATH`, `HERDR_WORKSPACE_ID`,
 `HERDR_TAB_ID`, and `HERDR_PANE_ID`) into every process running inside a
-pane it manages. That variable is the only proof that this session is
-actually running inside a Herdr-owned pane rather than an arbitrary
-terminal that merely happens to have this skill loaded.
+pane it manages. That variable is an ownership signal, not a
+cryptographic guarantee: its purpose is to stop this skill from acting on
+a session it doesn't own by accident — e.g. a stray terminal, a copy-pasted
+environment, or a session outside any Herdr-managed pane — not to defend
+against a hostile actor who deliberately sets the variable. Treat it as a
+"look before you leap" check, and rely on it only for that.
 
 - If `HERDR_ENV` is not set, or is not exactly `1`: **stop.** Say plainly
   that this session is not running inside a Herdr-managed pane, do not run
