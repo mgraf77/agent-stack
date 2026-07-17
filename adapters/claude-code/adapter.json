@@ -1,0 +1,6 @@
+{
+  "id": "claude-code",
+  "displayName": "Claude Code",
+  "targetDir": ".claude/skills",
+  "skillEntryFile": "SKILL.md"
+}
