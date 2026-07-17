@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-stack.local/schemas/project-profile.schema.json",
+  "title": "Project profile",
+  "description": "A deterministic selection of exportable skills, catalogue capabilities, and policies for one project or shared lane, stored as profiles/<profile>.json. The 'profile' and 'skills' fields are the exact contract scripts/sync.mjs reads (profile.profile as the receipt's profile name, profile.skills as the list of skills/<id>/ directories to export) — do not rename them without updating that script.",
+  "type": "object",
+  "required": ["profile", "display_name", "description", "target_projects", "skills"],
+  "properties": {
+    "profile": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "description": "Must match the filename without extension. Read by scripts/sync.mjs as the profile name."
+    },
+    "display_name": { "type": "string", "minLength": 1 },
+    "description": { "type": "string", "minLength": 1 },
+    "target_projects": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "description": "Project names this profile applies to, or [\"*\"] for every project."
+    },
+    "skills": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+      },
+      "minItems": 1,
+      "uniqueItems": true,
+      "description": "Canonical skills/<id>/ directories (each with a SKILL.md) that scripts/sync.mjs exports for this profile. No arbitrary cap: include every relevant, compatible skill. Ids must be kebab-case and unique — scripts/sync.mjs rejects duplicates."
+    },
+    "capabilities": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "catalog/capabilities/<id>.json ids: source-catalogue/provenance references for context, not exported by sync. A capability is not a substitute for an exportable skill — an entry a profile actually needs at runtime belongs in 'skills', backed by a real skills/<id>/SKILL.md."
+    },
+    "policies": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Relative paths under policies/ that apply to this profile."
+    },
+    "notes": { "type": "string" }
+  },
+  "additionalProperties": false
+}

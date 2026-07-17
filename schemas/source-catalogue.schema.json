@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-stack.local/schemas/source-catalogue.schema.json",
+  "title": "Source catalogue record",
+  "description": "One row of catalog/repositories.csv: an evaluated upstream source and its adoption decision.",
+  "type": "object",
+  "required": [
+    "display_name",
+    "canonical_repo_or_product",
+    "category",
+    "provenance",
+    "decision",
+    "rationale",
+    "license_or_terms",
+    "lifecycle_note"
+  ],
+  "properties": {
+    "display_name": { "type": "string", "minLength": 1 },
+    "canonical_repo_or_product": { "type": "string", "minLength": 1 },
+    "url": { "type": "string", "description": "Canonical URL; may be empty for unresolved identities." },
+    "category": { "type": "string", "minLength": 1 },
+    "provenance": { "type": "string", "minLength": 1 },
+    "decision": {
+      "type": "string",
+      "enum": ["ADOPT NOW", "PILOT", "HARVEST", "WATCH", "DO NOT USE", "UNRESOLVED"]
+    },
+    "rationale": { "type": "string", "minLength": 1 },
+    "license_or_terms": { "type": "string", "minLength": 1 },
+    "lifecycle_note": { "type": "string", "minLength": 1 }
+  },
+  "additionalProperties": false,
+  "csv": {
+    "path": "catalog/repositories.csv",
+    "header": [
+      "display_name",
+      "canonical_repo_or_product",
+      "url",
+      "category",
+      "provenance",
+      "decision",
+      "rationale",
+      "license_or_terms",
+      "lifecycle_note"
+    ]
+  }
+}

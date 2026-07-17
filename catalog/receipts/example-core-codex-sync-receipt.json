@@ -1,0 +1,20 @@
+{
+  "receiptVersion": "1",
+  "profile": "core",
+  "sourceRelease": "unreleased",
+  "adapter": { "id": "codex", "targetDir": ".agents/skills" },
+  "generatedAt": "2026-07-17T00:00:00.000Z",
+  "skills": [
+    {
+      "id": "orientation",
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "646e5f44873e5a93949ad23fb7ed89f7156c15cef2d9c8c0154809a51e348aa3"
+        }
+      ],
+      "skillChecksum": "5e6485d655b7672d9a5ac6e1e05266b3555b65bd82b57f46531dd241b6ee974f"
+    }
+  ],
+  "receiptChecksum": "a0d4a3adb296bb0581b2dc9eb99519f8bda67155259bddb863a31c79018ec690"
+}

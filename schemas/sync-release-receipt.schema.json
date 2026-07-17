@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-stack.local/schemas/sync-release-receipt.schema.json",
+  "title": "Sync/release receipt",
+  "description": "The exact shape of sync-receipt.json as written by scripts/sync.mjs (on --mode apply) and verified by scripts/doctor.mjs, one per adapter target directory. There is exactly one receipt format in this repo — this schema documents it; it does not define a second, competing shape.",
+  "type": "object",
+  "required": ["receiptVersion", "profile", "sourceRelease", "adapter", "generatedAt", "skills", "receiptChecksum"],
+  "properties": {
+    "receiptVersion": {
+      "type": "string",
+      "description": "Receipt format version, e.g. \"1\"."
+    },
+    "profile": {
+      "type": "string",
+      "description": "profiles/<profile>.json 'profile' value that was exported."
+    },
+    "sourceRelease": {
+      "type": "string",
+      "description": "Source release/version or commit this export was generated from. \"unreleased\" is the current placeholder until this repo cuts real releases."
+    },
+    "adapter": {
+      "type": "object",
+      "required": ["id", "targetDir"],
+      "properties": {
+        "id": { "type": "string", "description": "adapters/<id>/adapter.json id, e.g. \"codex\" or \"claude-code\"." },
+        "targetDir": { "type": "string", "description": "Adapter export target directory, e.g. \".agents/skills\"." }
+      },
+      "additionalProperties": false
+    },
+    "generatedAt": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$",
+      "description": "ISO-8601 UTC timestamp this receipt was generated at."
+    },
+    "skills": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "files", "skillChecksum"],
+        "properties": {
+          "id": { "type": "string" },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["path", "sha256"],
+              "properties": {
+                "path": { "type": "string" },
+                "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+              },
+              "additionalProperties": false
+            }
+          },
+          "skillChecksum": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+        },
+        "additionalProperties": false
+      },
+      "description": "One entry per exported skill, in the order scripts/sync.mjs resolved them (sorted by id)."
+    },
+    "receiptChecksum": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "sha256 over profile, sourceRelease, adapter.id, and each skill's skillChecksum — recomputed by scripts/doctor.mjs and scripts/validate.py to detect drift or hand-edits."
+    }
+  },
+  "additionalProperties": false
+}
