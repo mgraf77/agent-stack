@@ -1,0 +1,24 @@
+{
+  "id": "repo-context",
+  "provenance": {
+    "origin": "Repomix (yamadashy/repomix)",
+    "license": "MIT"
+  },
+  "declared_tools": ["Bash"],
+  "untrusted_content_handling": true,
+  "trigger_keywords": ["context bundle", "pack the repo", "repo context", "context pack", "share this repo"],
+  "positive_examples": [
+    "Can you pack this repo into a context bundle for me?",
+    "I need a repo context export to share with the other reviewer.",
+    "Give me a context pack of the src directory before I paste it into the other session."
+  ],
+  "negative_examples": [
+    "What's the weather like today?",
+    "Can you rename this variable to camelCase?"
+  ],
+  "entrypoint": "check.sh",
+  "rollback": {
+    "method": "Remove \"repo-context\" from every profiles/*.json skills array, then delete skills/repo-context/. The skill has no side effects beyond writing an explicitly-named output bundle file on demand, so no state migration is needed.",
+    "date_recorded": "2026-07-18"
+  }
+}

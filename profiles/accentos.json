@@ -1,15 +1,18 @@
 {
   "profile": "accentos",
   "display_name": "AccentOS",
-  "description": "All seven curated starter skills plus review/guardrail/scanning and browser regression evidence capabilities for AccentOS. No product-specific or private context; expand as real AccentOS-specific compatible capabilities are curated.",
+  "description": "All ten curated skills plus review/guardrail/scanning and browser regression evidence capabilities for AccentOS. No product-specific or private context; expand as real AccentOS-specific compatible capabilities are curated.",
   "target_projects": ["AccentOS"],
   "skills": [
     "orientation",
+    "repo-context",
     "plan-spec",
     "evidence-before-done",
+    "change-impact",
     "pr-feedback",
     "secret-safety",
     "browser-qa",
+    "markdown-vault",
     "handoff"
   ],
   "capabilities": [
