@@ -303,6 +303,9 @@ def validate_skill_promotions():
         if skill_id is not None and not isinstance(skill_id, str):
             error(f"{path}: id must be a string")
             skill_id = None
+        elif isinstance(skill_id, str) and not skill_id:
+            error(f"{path}: id must not be empty")
+            skill_id = None
         if isinstance(skill_id, str) and skill_id:
             if skill_id != skill_dir.name:
                 error(f"{path}: id '{skill_id}' does not match containing directory 'skills/{skill_dir.name}'")
@@ -312,17 +315,18 @@ def validate_skill_promotions():
         provenance = record.get("provenance")
         if isinstance(provenance, dict):
             for field in ("origin", "license"):
-                if not provenance.get(field):
-                    error(f"{path}: provenance.{field} is required")
+                value = provenance.get(field)
+                if not (isinstance(value, str) and value):
+                    error(f"{path}: provenance.{field} must be a non-empty string")
         elif provenance is not None:
             error(f"{path}: provenance must be an object")
 
         for field in ("declared_tools", "trigger_keywords", "positive_examples", "negative_examples"):
             value = record.get(field)
             if value is not None and not (
-                isinstance(value, list) and value and all(isinstance(v, str) for v in value)
+                isinstance(value, list) and value and all(isinstance(v, str) and v for v in value)
             ):
-                error(f"{path}: {field} must be a non-empty array of strings")
+                error(f"{path}: {field} must be a non-empty array of non-empty strings")
 
         untrusted = record.get("untrusted_content_handling")
         if untrusted is not None and not isinstance(untrusted, bool):
@@ -350,10 +354,11 @@ def validate_skill_promotions():
         rollback = record.get("rollback")
         if isinstance(rollback, dict):
             for field in ("method", "date_recorded"):
-                if not rollback.get(field):
-                    error(f"{path}: rollback.{field} is required")
+                value = rollback.get(field)
+                if not (isinstance(value, str) and value):
+                    error(f"{path}: rollback.{field} must be a non-empty string")
             date_recorded = rollback.get("date_recorded")
-            if date_recorded and not (isinstance(date_recorded, str) and DATE_RE.match(date_recorded)):
+            if isinstance(date_recorded, str) and date_recorded and not DATE_RE.match(date_recorded):
                 error(f"{path}: rollback.date_recorded '{date_recorded}' is not YYYY-MM-DD")
         elif rollback is not None:
             error(f"{path}: rollback must be an object")

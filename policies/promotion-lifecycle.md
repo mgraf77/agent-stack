@@ -50,13 +50,17 @@ as a synthetic capability (see "Local evaluation gates" below), using its
 own files instead of a separate fixture-shaped candidate directory:
 
 1. Add `skills/<id>/promotion.json`, matching
-   `schemas/skill-promotion-manifest.schema.json`: provenance
-   (`agent-stack-local`, or the catalogued upstream source it was adapted
-   from), `declared_tools`, `trigger_keywords`/`positive_examples`/
-   `negative_examples`, `untrusted_content_handling`, and a `rollback`
-   object (method + date recorded) — the same information
-   `rollback.receipt.json` records for a synthetic candidate, carried in
-   one file instead of two.
+   `schemas/skill-promotion-manifest.schema.json`: a non-empty, kebab-case
+   `id` matching the skill's own directory; `provenance` (`origin` —
+   `agent-stack-local`, or the catalogued upstream source it was adapted
+   from — and `license`, both non-empty strings); `declared_tools`/
+   `trigger_keywords`/`positive_examples`/`negative_examples` (each a
+   non-empty array of non-empty strings); a boolean
+   `untrusted_content_handling`; and a `rollback` object (a non-empty
+   `method` string and a `YYYY-MM-DD` `date_recorded`) — the same
+   information `rollback.receipt.json` records for a synthetic candidate,
+   carried in one file instead of two. Every one of these shapes is
+   enforced, not just documented — see the pre-check note below.
 2. Point `entrypoint` at the skill's own existing safe-usage check (e.g.
    `check.sh`) where the skill already has one runnable — do not add a new
    `run.sh`, and do not require a runtime executable at all when the skill

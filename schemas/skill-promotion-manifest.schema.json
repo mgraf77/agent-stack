@@ -18,7 +18,8 @@
     "id": {
       "type": "string",
       "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
-      "description": "Must match the skills/<id> directory name."
+      "minLength": 1,
+      "description": "Must be non-empty and match the skills/<id> directory name."
     },
     "provenance": {
       "type": "object",
@@ -26,6 +27,7 @@
       "properties": {
         "origin": {
           "type": "string",
+          "minLength": 1,
           "description": "\"agent-stack-local\" for an independently authored skill, or the catalog/repositories.csv source name it was adapted from. Never a new, uncatalogued upstream import."
         },
         "license": { "type": "string", "minLength": 1 }
@@ -34,24 +36,24 @@
     },
     "declared_tools": {
       "type": "array",
-      "items": { "type": "string" },
+      "items": { "type": "string", "minLength": 1 },
       "minItems": 1,
       "description": "Tools the skill's instructions call for. Matched against '# TOOL: <name>' markers in its entrypoint, when it has one."
     },
     "untrusted_content_handling": { "type": "boolean" },
     "trigger_keywords": {
       "type": "array",
-      "items": { "type": "string" },
+      "items": { "type": "string", "minLength": 1 },
       "minItems": 1
     },
     "positive_examples": {
       "type": "array",
-      "items": { "type": "string" },
+      "items": { "type": "string", "minLength": 1 },
       "minItems": 1
     },
     "negative_examples": {
       "type": "array",
-      "items": { "type": "string" },
+      "items": { "type": "string", "minLength": 1 },
       "minItems": 1
     },
     "entrypoint": {

@@ -66,23 +66,39 @@ manifest and entrypoint are read from differs.
 
 ### Manifest pre-check (`--skill` only)
 
-Before any of the six checks run, `--skill` validates the manifest itself
-(`validate_skill_manifest` in `evals/lib/common.sh`) and rejects — with
-exit code `2`, distinct from a check failure's exit `1` — a manifest that:
+Before any of the six checks run, `--skill` validates the full manifest
+shape itself (`validate_skill_manifest` in `evals/lib/common.sh`) and
+rejects — with exit code `2`, distinct from a check failure's exit `1` —
+a manifest that:
 
 - is missing or not valid JSON,
-- has no `id`, or an `id` that doesn't match the selected skill directory,
+- has no `id`, an empty or non-string `id`, a non-kebab-case `id`, or an
+  `id` that doesn't match the selected skill directory,
+- has a non-object `provenance`, or a `provenance.origin`/`.license` that
+  isn't a non-empty string,
+- has a `declared_tools`/`trigger_keywords`/`positive_examples`/
+  `negative_examples` that isn't a non-empty array of non-empty strings,
+- has a non-boolean `untrusted_content_handling`, or a non-boolean
+  `instruction_only` when present,
 - sets `instruction_only: true` while also declaring an `entrypoint` (or
   vice versa: no `entrypoint` and `instruction_only` not `true`),
-- declares an `entrypoint` that is an absolute path, contains a `..`
-  traversal segment, resolves (including through a symlink) outside the
-  skill directory, or doesn't exist.
+- declares an `entrypoint` that isn't a string, is an absolute path,
+  contains a `..` traversal segment, resolves (including through a
+  symlink) outside the skill directory, or doesn't exist,
+- has a non-object `rollback`, a `rollback.method` that isn't a non-empty
+  string, or a `rollback.date_recorded` that isn't `YYYY-MM-DD`.
 
-`scripts/validate.py` enforces the identical rules for every
-`skills/*/promotion.json` on disk (see below), so a bad manifest is caught
-at commit time even before anyone runs the gate. Regressions for both live
-in `evals/tests/skill-gate-regressions.sh` (gate pre-check) and
-`tests/skill-promotion-validate.py` (`scripts/validate.py`).
+A malformed value never crashes the pre-check — every field is type-
+checked (via jq's own `type` introspection) before its value is used, so
+an attacker-shaped manifest (wrong JSON type, deeply nested garbage) is
+always a clean rejection, not a stack trace.
+
+`scripts/validate.py`'s `validate_skill_promotions()` enforces the
+identical rules for every `skills/*/promotion.json` on disk (see below),
+so a bad manifest is caught at commit time even before anyone runs the
+gate. Regressions for both live in `evals/tests/skill-gate-regressions.sh`
+(13 cases against the gate) and `tests/skill-promotion-validate.py` (16
+cases against the validator).
 
 ## The six checks
 

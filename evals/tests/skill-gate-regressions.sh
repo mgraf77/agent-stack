@@ -77,8 +77,83 @@ write_manifest "$SCRATCH/scalar-id.promotion.json" '{
   "entrypoint": "check.sh",
   "rollback": { "method": "remove the skill", "date_recorded": "2026-07-18" }
 }'
-run_case "scalar id is rejected before the six checks, without a crash" 2 "does not match" -- \
+run_case "scalar id is rejected before the six checks, without a crash" 2 "must be a non-empty string" -- \
   bash "$RUN" --skill "$SKILL_DIR" --manifest "$SCRATCH/scalar-id.promotion.json"
+
+# --- empty string id: rejected ---
+write_manifest "$SCRATCH/empty-id.promotion.json" '{
+  "id": "",
+  "provenance": { "origin": "agent-stack-local", "license": "MIT" },
+  "declared_tools": ["Bash"],
+  "untrusted_content_handling": true,
+  "trigger_keywords": ["commit"],
+  "positive_examples": ["Can you check this before I commit it?"],
+  "negative_examples": ["What'"'"'s the weather like today?"],
+  "entrypoint": "check.sh",
+  "rollback": { "method": "remove the skill", "date_recorded": "2026-07-18" }
+}'
+run_case "empty string id is rejected before the six checks" 2 "must not be empty" -- \
+  bash "$RUN" --skill "$SKILL_DIR" --manifest "$SCRATCH/empty-id.promotion.json"
+
+# --- non-string provenance.origin: rejected ---
+write_manifest "$SCRATCH/bad-provenance-origin.promotion.json" '{
+  "id": "secret-safety",
+  "provenance": { "origin": 1, "license": "MIT" },
+  "declared_tools": ["Bash"],
+  "untrusted_content_handling": true,
+  "trigger_keywords": ["commit"],
+  "positive_examples": ["Can you check this before I commit it?"],
+  "negative_examples": ["What'"'"'s the weather like today?"],
+  "entrypoint": "check.sh",
+  "rollback": { "method": "remove the skill", "date_recorded": "2026-07-18" }
+}'
+run_case "non-string provenance.origin is rejected before the six checks" 2 "provenance.origin must be a non-empty string" -- \
+  bash "$RUN" --skill "$SKILL_DIR" --manifest "$SCRATCH/bad-provenance-origin.promotion.json"
+
+# --- non-string provenance.license: rejected ---
+write_manifest "$SCRATCH/bad-provenance-license.promotion.json" '{
+  "id": "secret-safety",
+  "provenance": { "origin": "agent-stack-local", "license": ["MIT"] },
+  "declared_tools": ["Bash"],
+  "untrusted_content_handling": true,
+  "trigger_keywords": ["commit"],
+  "positive_examples": ["Can you check this before I commit it?"],
+  "negative_examples": ["What'"'"'s the weather like today?"],
+  "entrypoint": "check.sh",
+  "rollback": { "method": "remove the skill", "date_recorded": "2026-07-18" }
+}'
+run_case "non-string provenance.license is rejected before the six checks" 2 "provenance.license must be a non-empty string" -- \
+  bash "$RUN" --skill "$SKILL_DIR" --manifest "$SCRATCH/bad-provenance-license.promotion.json"
+
+# --- non-array declared_tools: rejected in the pre-check, not incidentally in permission_boundary ---
+write_manifest "$SCRATCH/bad-declared-tools.promotion.json" '{
+  "id": "secret-safety",
+  "provenance": { "origin": "agent-stack-local", "license": "MIT" },
+  "declared_tools": "Bash",
+  "untrusted_content_handling": true,
+  "trigger_keywords": ["commit"],
+  "positive_examples": ["Can you check this before I commit it?"],
+  "negative_examples": ["What'"'"'s the weather like today?"],
+  "entrypoint": "check.sh",
+  "rollback": { "method": "remove the skill", "date_recorded": "2026-07-18" }
+}'
+run_case "non-array declared_tools is rejected before the six checks" 2 "declared_tools must be a non-empty array" -- \
+  bash "$RUN" --skill "$SKILL_DIR" --manifest "$SCRATCH/bad-declared-tools.promotion.json"
+
+# --- non-string rollback.method: rejected ---
+write_manifest "$SCRATCH/bad-rollback-method.promotion.json" '{
+  "id": "secret-safety",
+  "provenance": { "origin": "agent-stack-local", "license": "MIT" },
+  "declared_tools": ["Bash"],
+  "untrusted_content_handling": true,
+  "trigger_keywords": ["commit"],
+  "positive_examples": ["Can you check this before I commit it?"],
+  "negative_examples": ["What'"'"'s the weather like today?"],
+  "entrypoint": "check.sh",
+  "rollback": { "method": 123, "date_recorded": "2026-07-18" }
+}'
+run_case "non-string rollback.method is rejected before the six checks" 2 "rollback.method must be a non-empty string" -- \
+  bash "$RUN" --skill "$SKILL_DIR" --manifest "$SCRATCH/bad-rollback-method.promotion.json"
 
 # --- absolute entrypoint path: rejected ---
 write_manifest "$SCRATCH/absolute-entrypoint.promotion.json" '{
