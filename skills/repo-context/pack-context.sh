@@ -61,6 +61,7 @@ while IFS= read -r rel; do
   [[ "$rel" =~ $denylist_regex ]] && continue
   matches_include "$rel" || continue
   full="$target/$rel"
+  [[ -L "$full" ]] && continue
   [[ -f "$full" ]] || continue
   is_binary "$full" && continue
   files+=("$rel")

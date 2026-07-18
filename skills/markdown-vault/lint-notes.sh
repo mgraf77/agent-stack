@@ -34,8 +34,13 @@ frontmatter() {
 }
 
 field() {
-  # field <frontmatter-text> <key> — echoes a simple "key: value" scalar.
+  # field <frontmatter-text> <key> — echoes a simple "key: value" scalar,
+  # or nothing if the key is absent. Always returns 0: under
+  # `set -o pipefail`, grep finding no match would otherwise make this
+  # pipeline (and, via `set -e`, the whole script) fail silently for any
+  # legitimately-absent field, instead of being reported as a lint error.
   grep -E "^${2}:" <<<"$1" | head -n1 | sed -E "s/^${2}:[[:space:]]*//"
+  return 0
 }
 
 declare -A title_to_file
@@ -57,6 +62,10 @@ for note in "${notes[@]}"; do
     errors+=("$note: frontmatter 'kind' must be 'raw' or 'wiki', got '$kind'")
   fi
   [[ -z "$tags" ]] && errors+=("$note: missing frontmatter field 'tags'")
+  if [[ "$kind" == "wiki" ]]; then
+    sources=$(field "$fm" "sources")
+    [[ -z "$sources" ]] && errors+=("$note: missing frontmatter field 'sources' (required when kind: wiki)")
+  fi
   if [[ -n "$title" ]]; then
     key=$(tr '[:upper:]' '[:lower:]' <<<"$title")
     title_to_file["$key"]="$note"

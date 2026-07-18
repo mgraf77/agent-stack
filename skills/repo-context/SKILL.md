@@ -18,9 +18,11 @@ same way every time.
 2. Run `pack-context.sh <target-dir> [output-file] [include-glob ...]`.
 3. It lists tracked files (via `git ls-files` when `<target-dir>` is a repo
    root, `find` otherwise), sorts them byte-for-byte (`LC_ALL=C`), skips
-   binary files and a small denylist (`.git`, `node_modules`, `dist`,
-   `build`, `.next`, `__pycache__`, `vendor`), and writes a table of
-   contents plus fenced code blocks for every remaining file.
+   binary files, symlinks (so a tracked symlink can never pull content
+   from outside the selected scope into the bundle), and a small denylist
+   (`.git`, `node_modules`, `dist`, `build`, `.next`, `__pycache__`,
+   `vendor`), and writes a table of contents plus fenced code blocks for
+   every remaining file.
 4. Before writing the bundle, it scans the assembled text for likely
    credentials the same way `secret-safety` does (reusing
    `skills/secret-safety/scan-secrets.sh` when that skill is present in the
