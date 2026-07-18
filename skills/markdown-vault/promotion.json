@@ -1,0 +1,24 @@
+{
+  "id": "markdown-vault",
+  "provenance": {
+    "origin": "agent-stack-local",
+    "license": "MIT"
+  },
+  "declared_tools": ["Bash"],
+  "untrusted_content_handling": true,
+  "trigger_keywords": ["knowledge vault", "markdown vault", "wiki note", "vault note", "lint the notes"],
+  "positive_examples": [
+    "Can you add this to the knowledge vault as a new wiki note?",
+    "Please lint the notes before I commit the vault changes.",
+    "I want to file this research into a vault note with proper links."
+  ],
+  "negative_examples": [
+    "What's the weather like today?",
+    "Can you refactor this function to use async/await?"
+  ],
+  "entrypoint": "check.sh",
+  "rollback": {
+    "method": "Remove \"markdown-vault\" from every profiles/*.json skills array, then delete skills/markdown-vault/. The skill has no side effects beyond linting a given vault directory on demand, so no state migration is needed.",
+    "date_recorded": "2026-07-18"
+  }
+}

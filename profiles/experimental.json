@@ -18,5 +18,5 @@
     "jcode-benchmark-pilot"
   ],
   "policies": ["free-first.md", "promotion-lifecycle.md"],
-  "notes": "Run only in isolated worktrees/containers with no production credentials. Promote a capability out of experimental by adding it to a project profile once its pilot succeeds. pr-feedback/browser-qa omitted: pilots here are bounded coding-agent trials, not PR-triage or UI work."
+  "notes": "Run only in isolated worktrees/containers with no production credentials. Promote a capability out of experimental by adding it to a project profile once its pilot succeeds. pr-feedback/browser-qa/change-impact omitted: pilots here are bounded coding-agent trials, not PR-triage or UI work. repo-context/markdown-vault omitted too: this profile intentionally stays limited to the five core safety-discipline skills (orientation, spec discipline, evidence before done, secret safety, handoff) rather than growing to match core's general productivity skills."
 }

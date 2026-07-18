@@ -1,0 +1,24 @@
+{
+  "id": "change-impact",
+  "provenance": {
+    "origin": "agent-stack-local",
+    "license": "MIT"
+  },
+  "declared_tools": ["Bash"],
+  "untrusted_content_handling": true,
+  "trigger_keywords": ["change impact", "review triage", "triage this diff", "risk categorize", "impact of this change"],
+  "positive_examples": [
+    "Can you assess the change impact of this diff before I open the PR?",
+    "Help me triage this diff by risk before requesting review.",
+    "What's the impact of this change on the rest of the codebase?"
+  ],
+  "negative_examples": [
+    "What's the weather like today?",
+    "Can you write a haiku about autumn?"
+  ],
+  "entrypoint": "check.sh",
+  "rollback": {
+    "method": "Remove \"change-impact\" from every profiles/*.json skills array, then delete skills/change-impact/. The skill has no side effects beyond printing a classification table to stdout on demand, so no state migration is needed.",
+    "date_recorded": "2026-07-18"
+  }
+}

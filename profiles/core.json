@@ -1,14 +1,17 @@
 {
   "profile": "core",
   "display_name": "Core",
-  "description": "Baseline skills and capabilities safe and useful for every project regardless of product domain: orientation, spec discipline, evidence before done, PR feedback triage, secret safety, and handoff, backed by the review workflow, guardrails, evaluation gate, context packaging, secret scanning, and lightweight spec catalogue capabilities.",
+  "description": "Baseline skills and capabilities safe and useful for every project regardless of product domain: orientation, deterministic repo-context packaging, spec discipline, evidence before done, change-impact review triage, PR feedback triage, secret safety, Markdown knowledge-vault maintenance, and handoff, backed by the review workflow, guardrails, evaluation gate, context packaging, secret scanning, and lightweight spec catalogue capabilities.",
   "target_projects": ["*"],
   "skills": [
     "orientation",
+    "repo-context",
     "plan-spec",
     "evidence-before-done",
+    "change-impact",
     "pr-feedback",
     "secret-safety",
+    "markdown-vault",
     "handoff"
   ],
   "capabilities": [

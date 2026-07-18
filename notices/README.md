@@ -45,3 +45,34 @@ Per-skill notices:
 - [secret-safety.md](secret-safety.md)
 - [browser-qa.md](browser-qa.md)
 - [handoff.md](handoff.md)
+
+## Second batch (issue #20)
+
+Three more skills, each adapted from compatible material already
+evaluated in `catalog/repositories.csv` (all sources below are MIT except
+the LLM Wiki gist, which carries no attached license and was
+reimplemented as an idea only, never copied as text):
+
+| Source | URL | Version/commit observed | License |
+|---|---|---|---|
+| Repomix | https://github.com/yamadashy/repomix | v1.16.1, observed 2026-07-17 | MIT |
+| Cavekit | https://github.com/JuliusBrussee/cavekit | v4 (main), observed 2026-07-17 | MIT |
+| Superpowers | https://github.com/obra/superpowers | v6.1.1, observed 2026-07-17 | MIT |
+| Obsidian Skills | https://github.com/kepano/obsidian-skills | main, ~46 commits, observed 2026-07-17 | MIT |
+| LLM Wiki gist | https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f | created 2026-04-04, observed 2026-07-17 | No explicit license attached; idea reimplemented independently |
+
+`repo-context` is the first skill to back the pre-existing
+`repomix-context-export` capability record (`ADOPT NOW` since the first
+batch) with a real, runnable `skills/<id>/SKILL.md`; the other two
+(`change-impact`, `markdown-vault`) follow the same independent-adaptation
+policy as the first batch — no file copied verbatim, only the named
+upstream project's *concept* reused, reworded and reimplemented for this
+repository. All three ship a `promotion.json` and go through the same
+real-skill local evaluation gate (`bash evals/run.sh --skill skills/<id>`)
+that `secret-safety` established in the predecessor issue.
+
+Per-skill notices:
+
+- [repo-context.md](repo-context.md)
+- [change-impact.md](change-impact.md)
+- [markdown-vault.md](markdown-vault.md)
