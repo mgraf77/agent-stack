@@ -12,11 +12,28 @@
 #                                        fixtures (see fixtures/expected_outcomes.json).
 #
 #   evals/run.sh --capability DIR       Gate mode: runs all six checks
-#                                        against a single real candidate
+#                                        against a single synthetic candidate
 #                                        capability directory (must contain
 #                                        capability.json, SKILL.md, run.sh,
 #                                        rollback.receipt.json). Every check
 #                                        must PASS for promotion.
+#
+#   evals/run.sh --skill DIR            Gate mode for a real curated skills/<id>/
+#                                        package: same six checks, reading
+#                                        DIR/promotion.json (see
+#                                        schemas/skill-promotion-manifest.schema.json)
+#                                        instead of capability.json, and
+#                                        gating DIR/SKILL.md directly. Does
+#                                        not require a run.sh entrypoint when
+#                                        the manifest declares
+#                                        instruction_only: true.
+#
+#   --manifest PATH                     With --capability/--skill, read the
+#                                        manifest from PATH instead of the
+#                                        default file inside DIR. Used to gate
+#                                        a real skill's files against a
+#                                        deliberately-broken manifest fixture
+#                                        without duplicating the skill's files.
 #
 # Requires only: bash, jq, coreutils `timeout`. No API keys, no network.
 
@@ -44,11 +61,23 @@ CHECKS=(positive_activation negative_activation failure_behavior permission_boun
 
 MODE="self-test"
 CAP_DIR=""
+MANIFEST_OVERRIDE=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --capability)
       CAP_DIR="$2"
       MODE="gate"
+      MANIFEST_FILE_NAME="capability.json"
+      shift 2
+      ;;
+    --skill)
+      CAP_DIR="$2"
+      MODE="gate"
+      MANIFEST_FILE_NAME="promotion.json"
+      shift 2
+      ;;
+    --manifest)
+      MANIFEST_OVERRIDE="$2"
       shift 2
       ;;
     *)
@@ -57,6 +86,15 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+export MANIFEST_FILE_NAME
+if [[ -n "$MANIFEST_OVERRIDE" ]]; then
+  if [[ ! -f "$MANIFEST_OVERRIDE" ]]; then
+    echo "Manifest override not found: $MANIFEST_OVERRIDE" >&2
+    exit 2
+  fi
+  MANIFEST_OVERRIDE_PATH="$(cd "$(dirname "$MANIFEST_OVERRIDE")" && pwd)/$(basename "$MANIFEST_OVERRIDE")"
+  export MANIFEST_OVERRIDE_PATH
+fi
 
 run_one_check() {
   local check_name="$1" cap_dir="$2"

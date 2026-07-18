@@ -8,10 +8,18 @@ check_permission_boundary() {
   local cap_dir="$1"
   local name
   name=$(basename "$cap_dir")
-  local entry="$cap_dir/run.sh"
+  local entry_name
+  entry_name=$(capability_entrypoint "$cap_dir")
+
+  if [[ -z "$entry_name" ]]; then
+    log_pass "$name is instruction-only (no declared entrypoint); permission_boundary is not applicable"
+    return 0
+  fi
+
+  local entry="$cap_dir/$entry_name"
 
   local declared used
-  declared=$(jq -r '.declared_tools[]' "$cap_dir/capability.json" | sort -u)
+  declared=$(jq -r '.declared_tools[]' "$(manifest_path "$cap_dir")" | sort -u)
   used=$(grep -oE '# TOOL: [A-Za-z0-9_-]+' "$entry" 2>/dev/null | sed 's/# TOOL: //' | sort -u)
 
   local undeclared=()

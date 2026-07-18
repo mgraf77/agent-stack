@@ -7,10 +7,18 @@ check_failure_behavior() {
   local cap_dir="$1"
   local name
   name=$(basename "$cap_dir")
-  local entry="$cap_dir/run.sh"
+  local entry_name
+  entry_name=$(capability_entrypoint "$cap_dir")
+
+  if [[ -z "$entry_name" ]]; then
+    log_pass "$name is instruction-only (no declared entrypoint); failure_behavior is not applicable"
+    return 0
+  fi
+
+  local entry="$cap_dir/$entry_name"
 
   if [[ ! -f "$entry" ]]; then
-    log_fail "$name has no run.sh entrypoint"
+    log_fail "$name has no $entry_name entrypoint"
     return 1
   fi
 

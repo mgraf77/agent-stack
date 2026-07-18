@@ -2,6 +2,7 @@
 # Usage check / fixture for the secret-safety skill.
 # Confirms scan-secrets.sh passes on a clean fixture and fails (detects) on a
 # fixture containing well-known placeholder secret patterns.
+# TOOL: Bash
 set -euo pipefail
 
 dir=$(dirname "$0")

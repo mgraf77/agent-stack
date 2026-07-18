@@ -43,6 +43,42 @@ relevant profile(s)' `skills` array.
    written by `scripts/sync.mjs --mode apply`) when the profile is
    actually delivered to a product repository.
 
+## Promoting a real curated skill through the local evaluation gate
+
+A real `skills/<id>/` package can go through the same trial → approved gate
+as a synthetic capability (see "Local evaluation gates" below), using its
+own files instead of a separate fixture-shaped candidate directory:
+
+1. Add `skills/<id>/promotion.json`, matching
+   `schemas/skill-promotion-manifest.schema.json`: provenance
+   (`agent-stack-local`, or the catalogued upstream source it was adapted
+   from), `declared_tools`, `trigger_keywords`/`positive_examples`/
+   `negative_examples`, `untrusted_content_handling`, and a `rollback`
+   object (method + date recorded) — the same information
+   `rollback.receipt.json` records for a synthetic candidate, carried in
+   one file instead of two.
+2. Point `entrypoint` at the skill's own existing safe-usage check (e.g.
+   `check.sh`) where the skill already has one runnable — do not add a new
+   `run.sh`, and do not require a runtime executable at all when the skill
+   is instruction-only: set `instruction_only: true` and omit `entrypoint`
+   instead. `failure_behavior`/`permission_boundary` are then not
+   applicable rather than failed for missing a script.
+3. Confirm `SKILL.md` states explicit untrusted-content handling guidance
+   when `untrusted_content_handling: true`, as the `prompt_injection` check
+   requires the same as it does for a synthetic candidate.
+4. Run `bash evals/run.sh --skill skills/<id>`. All six checks must PASS
+   before the skill moves beyond `pilot`/`experimental`, exactly as for a
+   `--capability` candidate.
+5. Record the transition with
+   `evals/templates/promotion-record-template.md`, same as any other
+   candidate.
+
+`secret-safety` is migrated this way as the first real skill on this route
+(`skills/secret-safety/promotion.json`); see `evals/README.md` for the
+`--skill` usage and the negative-control fixture proving the gate actually
+discriminates. No other curated skill is migrated by this change — see
+`evals/fixtures/skills/README.md` before adding more.
+
 ## No auto-merge or autonomous production authority
 
 Promotion is always a reviewable, reversible pull request. This lifecycle
@@ -73,7 +109,9 @@ Stage names map onto the existing model like this:
 - **Approved** — the capability's status moves from `pilot` to
   `adopt_now` (matching an `ADOPT NOW` catalogue decision), and/or it is
   added to any profile beyond `experimental`. This transition requires
-  `bash evals/run.sh --capability <path-to-capability-dir>` to pass all
+  `bash evals/run.sh --capability <path-to-capability-dir>` (or, for a real
+  curated skill, `bash evals/run.sh --skill skills/<id>` — see "Promoting a
+  real curated skill through the local evaluation gate" above) to pass all
   six checks below, plus a promotion record opened from
   `evals/templates/promotion-record-template.md`.
 
@@ -90,7 +128,7 @@ permitted, for any of them:
 | `failure_behavior` | The capability's entrypoint completes within a bounded timeout, and any failure leaves a clear diagnostic; an unbounded hang is an unsafe failure. |
 | `permission_boundary` | The capability only uses the tools it declared. |
 | `prompt_injection` | The capability documents untrusted-content handling, and the eval harness itself never executes fixture/external content. |
-| `rollback_evidence` | A complete `rollback.receipt.json` exists, recording how to undo the capability. |
+| `rollback_evidence` | A complete `rollback.receipt.json` exists, recording how to undo the capability (or, for a real skill gated with `--skill`, an equally complete `rollback` object in its `promotion.json`). |
 
 ### Demotion and rollback
 

@@ -8,9 +8,11 @@ check_positive_activation() {
   local name
   name=$(basename "$cap_dir")
 
+  local manifest
+  manifest="$(manifest_path "$cap_dir")"
   local keywords examples
-  mapfile -t keywords < <(jq -r '.trigger_keywords[]' "$cap_dir/capability.json" | tr '[:upper:]' '[:lower:]')
-  mapfile -t examples < <(jq -r '.positive_examples[]' "$cap_dir/capability.json")
+  mapfile -t keywords < <(jq -r '.trigger_keywords[]' "$manifest" | tr '[:upper:]' '[:lower:]')
+  mapfile -t examples < <(jq -r '.positive_examples[]' "$manifest")
 
   if [[ ${#examples[@]} -eq 0 ]]; then
     log_fail "$name declares no positive_examples"
