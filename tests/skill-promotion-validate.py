@@ -26,7 +26,7 @@ failures = []
 
 
 def run_case(name, skill_id="sample-skill", entrypoint="check.sh", write_entrypoint=True,
-             instruction_only=None, expect_error_substr=None):
+             instruction_only=None, declared_tools=None, expect_error_substr=None):
     with tempfile.TemporaryDirectory() as tmp:
         case_root = Path(tmp)
         skill_dir = case_root / "skills" / "sample-skill"
@@ -38,7 +38,7 @@ def run_case(name, skill_id="sample-skill", entrypoint="check.sh", write_entrypo
         manifest = {
             "id": skill_id,
             "provenance": {"origin": "agent-stack-local", "license": "MIT"},
-            "declared_tools": ["Bash"],
+            "declared_tools": declared_tools if declared_tools is not None else ["Bash"],
             "untrusted_content_handling": True,
             "trigger_keywords": ["x"],
             "positive_examples": ["x"],
@@ -57,7 +57,11 @@ def run_case(name, skill_id="sample-skill", entrypoint="check.sh", write_entrypo
         validate.ROOT = case_root
         validate.errors = []
         validate.warnings = []
-        validate.validate_skill_promotions()
+        try:
+            validate.validate_skill_promotions()
+        except Exception as exc:  # a malformed manifest must produce an error, never a crash
+            failures.append(f"{name}: raised {type(exc).__name__}: {exc} instead of a validation error")
+            return
         errs = list(validate.errors)
 
     if expect_error_substr is None:
@@ -78,6 +82,16 @@ run_case(
     "id mismatch with containing directory is rejected",
     skill_id="not-sample-skill",
     expect_error_substr="does not match containing directory",
+)
+run_case(
+    "scalar (non-string) id is rejected without a traceback",
+    skill_id=1,
+    expect_error_substr="id must be a string",
+)
+run_case(
+    "non-array declared_tools is rejected without a traceback",
+    declared_tools="Bash",
+    expect_error_substr="declared_tools must be a non-empty array of strings",
 )
 run_case(
     "absolute entrypoint path is rejected",

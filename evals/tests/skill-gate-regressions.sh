@@ -65,6 +65,21 @@ write_manifest "$SCRATCH/id-mismatch.promotion.json" '{
 run_case "id mismatch is rejected before the six checks" 2 "does not match" -- \
   bash "$RUN" --skill "$SKILL_DIR" --manifest "$SCRATCH/id-mismatch.promotion.json"
 
+# --- scalar (non-string, e.g. JSON number) id: rejected, no crash ---
+write_manifest "$SCRATCH/scalar-id.promotion.json" '{
+  "id": 1,
+  "provenance": { "origin": "agent-stack-local", "license": "MIT" },
+  "declared_tools": ["Bash"],
+  "untrusted_content_handling": true,
+  "trigger_keywords": ["commit"],
+  "positive_examples": ["Can you check this before I commit it?"],
+  "negative_examples": ["What'"'"'s the weather like today?"],
+  "entrypoint": "check.sh",
+  "rollback": { "method": "remove the skill", "date_recorded": "2026-07-18" }
+}'
+run_case "scalar id is rejected before the six checks, without a crash" 2 "does not match" -- \
+  bash "$RUN" --skill "$SKILL_DIR" --manifest "$SCRATCH/scalar-id.promotion.json"
+
 # --- absolute entrypoint path: rejected ---
 write_manifest "$SCRATCH/absolute-entrypoint.promotion.json" '{
   "id": "secret-safety",

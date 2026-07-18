@@ -300,10 +300,14 @@ def validate_skill_promotions():
         check_required(path, record, required)
 
         skill_id = record.get("id")
-        if skill_id and skill_id != skill_dir.name:
-            error(f"{path}: id '{skill_id}' does not match containing directory 'skills/{skill_dir.name}'")
-        if skill_id and not ID_RE.match(skill_id):
-            error(f"{path}: id '{skill_id}' is not kebab-case")
+        if skill_id is not None and not isinstance(skill_id, str):
+            error(f"{path}: id must be a string")
+            skill_id = None
+        if isinstance(skill_id, str) and skill_id:
+            if skill_id != skill_dir.name:
+                error(f"{path}: id '{skill_id}' does not match containing directory 'skills/{skill_dir.name}'")
+            if not ID_RE.match(skill_id):
+                error(f"{path}: id '{skill_id}' is not kebab-case")
 
         provenance = record.get("provenance")
         if isinstance(provenance, dict):
@@ -349,7 +353,7 @@ def validate_skill_promotions():
                 if not rollback.get(field):
                     error(f"{path}: rollback.{field} is required")
             date_recorded = rollback.get("date_recorded")
-            if date_recorded and not DATE_RE.match(date_recorded):
+            if date_recorded and not (isinstance(date_recorded, str) and DATE_RE.match(date_recorded)):
                 error(f"{path}: rollback.date_recorded '{date_recorded}' is not YYYY-MM-DD")
         elif rollback is not None:
             error(f"{path}: rollback must be an object")
