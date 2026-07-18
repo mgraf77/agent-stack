@@ -12,11 +12,28 @@
 #                                        fixtures (see fixtures/expected_outcomes.json).
 #
 #   evals/run.sh --capability DIR       Gate mode: runs all six checks
-#                                        against a single real candidate
+#                                        against a single synthetic candidate
 #                                        capability directory (must contain
 #                                        capability.json, SKILL.md, run.sh,
 #                                        rollback.receipt.json). Every check
 #                                        must PASS for promotion.
+#
+#   evals/run.sh --skill DIR            Gate mode for a real curated skills/<id>/
+#                                        package: same six checks, reading
+#                                        DIR/promotion.json (see
+#                                        schemas/skill-promotion-manifest.schema.json)
+#                                        instead of capability.json, and
+#                                        gating DIR/SKILL.md directly. Does
+#                                        not require a run.sh entrypoint when
+#                                        the manifest declares
+#                                        instruction_only: true.
+#
+#   --manifest PATH                     With --capability/--skill, read the
+#                                        manifest from PATH instead of the
+#                                        default file inside DIR. Used to gate
+#                                        a real skill's files against a
+#                                        deliberately-broken manifest fixture
+#                                        without duplicating the skill's files.
 #
 # Requires only: bash, jq, coreutils `timeout`. No API keys, no network.
 
@@ -26,7 +43,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FIXTURES_DIR="$ROOT/fixtures"
 export FIXTURES_DIR
 
-for tool in jq timeout; do
+for tool in jq timeout realpath; do
   if ! command -v "$tool" >/dev/null 2>&1; then
     echo "Missing required local tool: $tool" >&2
     exit 2
@@ -44,11 +61,25 @@ CHECKS=(positive_activation negative_activation failure_behavior permission_boun
 
 MODE="self-test"
 CAP_DIR=""
+MANIFEST_OVERRIDE=""
+SKILL_MODE=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --capability)
       CAP_DIR="$2"
       MODE="gate"
+      MANIFEST_FILE_NAME="capability.json"
+      shift 2
+      ;;
+    --skill)
+      CAP_DIR="$2"
+      MODE="gate"
+      MANIFEST_FILE_NAME="promotion.json"
+      SKILL_MODE=1
+      shift 2
+      ;;
+    --manifest)
+      MANIFEST_OVERRIDE="$2"
       shift 2
       ;;
     *)
@@ -57,6 +88,15 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+export MANIFEST_FILE_NAME
+if [[ -n "$MANIFEST_OVERRIDE" ]]; then
+  if [[ ! -f "$MANIFEST_OVERRIDE" ]]; then
+    echo "Manifest override not found: $MANIFEST_OVERRIDE" >&2
+    exit 2
+  fi
+  MANIFEST_OVERRIDE_PATH="$(cd "$(dirname "$MANIFEST_OVERRIDE")" && pwd)/$(basename "$MANIFEST_OVERRIDE")"
+  export MANIFEST_OVERRIDE_PATH
+fi
 
 run_one_check() {
   local check_name="$1" cap_dir="$2"
@@ -73,6 +113,16 @@ if [[ "$MODE" == "gate" ]]; then
     exit 2
   fi
   CAP_DIR="$(cd "$CAP_DIR" && pwd)"
+
+  if [[ "$SKILL_MODE" -eq 1 ]]; then
+    if ! manifest_err=$(validate_skill_manifest "$CAP_DIR" 2>&1); then
+      echo "== Skill manifest validation =="
+      echo "INVALID: $manifest_err"
+      echo
+      echo "RESULT: manifest rejected before the six checks. Not eligible for promotion."
+      exit 2
+    fi
+  fi
 
   echo "== Promotion gate: $(basename "$CAP_DIR") =="
   echo "== Harness self-scan (prompt-injection defense-in-depth) =="

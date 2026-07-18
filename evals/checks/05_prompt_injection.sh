@@ -13,7 +13,7 @@ check_prompt_injection() {
   name=$(basename "$cap_dir")
 
   local declared
-  declared=$(jq -r '.untrusted_content_handling // false' "$cap_dir/capability.json")
+  declared=$(jq -r '.untrusted_content_handling // false' "$(manifest_path "$cap_dir")")
   if [[ "$declared" != "true" ]]; then
     log_fail "$name does not set untrusted_content_handling: true"
     return 1

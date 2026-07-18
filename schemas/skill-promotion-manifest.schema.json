@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-stack.local/schemas/skill-promotion-manifest.schema.json",
+  "title": "Skill promotion manifest",
+  "description": "Smallest metadata a curated skills/<id>/ package needs to be gated by evals/run.sh --skill as a real promotion candidate, per the 'Promoting a real curated skill' section of policies/promotion-lifecycle.md. Stored as skills/<id>/promotion.json. This schema documents the shape; scripts/validate.py's validate_skill_promotions() and evals/lib/common.sh's validate_skill_manifest() enforce the parts a static JSON Schema can't (id matching the containing directory, entrypoint path safety, instruction_only/entrypoint mutual exclusivity).",
+  "type": "object",
+  "required": [
+    "id",
+    "provenance",
+    "declared_tools",
+    "untrusted_content_handling",
+    "trigger_keywords",
+    "positive_examples",
+    "negative_examples",
+    "rollback"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "minLength": 1,
+      "description": "Must be non-empty and match the skills/<id> directory name."
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["origin", "license"],
+      "properties": {
+        "origin": {
+          "type": "string",
+          "minLength": 1,
+          "description": "\"agent-stack-local\" for an independently authored skill, or the catalog/repositories.csv source name it was adapted from. Never a new, uncatalogued upstream import."
+        },
+        "license": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "declared_tools": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1,
+      "description": "Tools the skill's instructions call for. Matched against '# TOOL: <name>' markers in its entrypoint, when it has one."
+    },
+    "untrusted_content_handling": { "type": "boolean" },
+    "trigger_keywords": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1
+    },
+    "positive_examples": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1
+    },
+    "negative_examples": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1
+    },
+    "entrypoint": {
+      "type": "string",
+      "description": "Relative path, within the skill directory, to its existing safe-usage check script (e.g. check.sh). Must not be absolute, contain a '..' traversal segment, or resolve (including through a symlink) outside the skill directory, and the file must exist. Required unless instruction_only is true, in which case it must be omitted entirely — the two are mutually exclusive."
+    },
+    "instruction_only": {
+      "type": "boolean",
+      "default": false,
+      "description": "True when the skill is instructions-only and ships no runtime entrypoint; entrypoint must then be omitted. failure_behavior and permission_boundary are then not applicable rather than failed for missing an executable."
+    },
+    "rollback": {
+      "type": "object",
+      "required": ["method", "date_recorded"],
+      "properties": {
+        "method": { "type": "string", "minLength": 1 },
+        "date_recorded": { "type": "string", "format": "date" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
