@@ -1,4 +1,13 @@
-import { readdirSync, mkdirSync, copyFileSync, chmodSync, rmSync, lstatSync } from 'node:fs';
+import {
+  readdirSync,
+  mkdirSync,
+  copyFileSync,
+  chmodSync,
+  rmSync,
+  lstatSync,
+  existsSync,
+  renameSync,
+} from 'node:fs';
 import { join, relative, dirname, sep } from 'node:path';
 
 // Throws if path exists and is itself a symlink. Used to reject a symlinked
@@ -18,12 +27,83 @@ export function assertNotSymlink(path) {
   }
 }
 
-// Deletes and recreates dir so it exactly matches what's written after this
-// call — no leftovers from a prior profile/run can survive.
-export function replaceDirectory(dir) {
-  assertNotSymlink(dir);
-  rmSync(dir, { recursive: true, force: true });
-  mkdirSync(dir, { recursive: true });
+// Sibling paths used to stage a new export and, transiently, to hold the
+// previous export while it is swapped out. Fixed (not randomized) names
+// keep runs deterministic and let a later run recognize and clean up
+// leftovers from an apply that was interrupted before completing.
+export function stagingDirFor(targetDir) {
+  return `${targetDir}.sync-staging`;
+}
+
+export function backupDirFor(targetDir) {
+  return `${targetDir}.sync-backup`;
+}
+
+// Cleans up any staging/backup directories left behind by an apply that
+// was interrupted before it finished. Safe to call unconditionally at the
+// start of every apply: a clean prior run leaves neither directory behind,
+// so this is then a no-op.
+//
+// - backup present, targetDir missing: the process died after moving the
+//   live export aside but before swapping the new one in. Restore the
+//   prior valid export.
+// - backup present, targetDir present: the process died after the swap
+//   completed but before the now-stale backup was removed. Discard it.
+// - staging present: an aborted build that never reached (or survived)
+//   the swap. Discard it; the next apply rebuilds it from scratch.
+export function recoverInterruptedSwap(targetDir) {
+  const staging = stagingDirFor(targetDir);
+  const backup = backupDirFor(targetDir);
+  assertNotSymlink(targetDir);
+  assertNotSymlink(staging);
+  assertNotSymlink(backup);
+
+  if (existsSync(backup)) {
+    if (!existsSync(targetDir)) {
+      renameSync(backup, targetDir);
+    } else {
+      rmSync(backup, { recursive: true, force: true });
+    }
+  }
+  if (existsSync(staging)) {
+    rmSync(staging, { recursive: true, force: true });
+  }
+}
+
+// Atomically swaps a verified staging directory into targetDir's place.
+// Uses two renames (target -> backup, staging -> target) rather than one
+// direct rename because POSIX rename(2) refuses to replace a non-empty
+// directory and Windows refuses to rename onto any existing directory;
+// renaming onto a path that does not yet exist works on both. Each
+// individual rename is atomic, so at any instant targetDir is either the
+// complete old export or the complete new one, never a partial mix. If the
+// process dies between the two renames, recoverInterruptedSwap finishes
+// the job (in either direction) on the next apply.
+export function atomicReplaceDirectory(targetDir, stagingDir) {
+  assertNotSymlink(targetDir);
+  assertNotSymlink(stagingDir);
+  const backup = backupDirFor(targetDir);
+  if (existsSync(backup)) {
+    throw new Error(
+      `Refusing to swap into ${targetDir}: stale backup directory present at ${backup}. Run sync again to recover it first.`,
+    );
+  }
+
+  const hadExisting = existsSync(targetDir);
+  if (hadExisting) {
+    renameSync(targetDir, backup);
+  }
+  try {
+    renameSync(stagingDir, targetDir);
+  } catch (err) {
+    if (hadExisting) {
+      renameSync(backup, targetDir);
+    }
+    throw err;
+  }
+  if (hadExisting) {
+    rmSync(backup, { recursive: true, force: true });
+  }
 }
 
 // Recursively lists files under rootDir as sorted, POSIX-style relative paths
