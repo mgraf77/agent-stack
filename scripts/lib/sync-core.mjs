@@ -104,3 +104,45 @@ export function computeReceiptChecksum({ profile, sourceRelease, adapterId, skil
   ];
   return sha256OfPairs(pairs);
 }
+
+// Recomputes checksums for everything written to a staged export and
+// compares them against what sync intended to write, so a short write or
+// corrupted copy is caught before the staged tree is swapped in as live.
+export function verifyStagedExport(stagingDir, skills, receipt) {
+  const receiptPath = join(stagingDir, 'sync-receipt.json');
+  if (!existsSync(receiptPath)) {
+    throw new Error(`Staged export at ${stagingDir} is missing sync-receipt.json`);
+  }
+  const onDisk = JSON.parse(readFileSync(receiptPath, 'utf8'));
+  const recomputed = computeReceiptChecksum({
+    profile: onDisk.profile,
+    sourceRelease: onDisk.sourceRelease,
+    adapterId: onDisk.adapter.id,
+    skills: onDisk.skills,
+  });
+  if (recomputed !== onDisk.receiptChecksum || onDisk.receiptChecksum !== receipt.receiptChecksum) {
+    throw new Error(`Staged receipt at ${receiptPath} failed checksum verification`);
+  }
+
+  for (const skill of skills) {
+    const skillDir = join(stagingDir, skill.id);
+    if (!existsSync(skillDir)) {
+      throw new Error(`Staged export at ${stagingDir} is missing skill "${skill.id}"`);
+    }
+    const actualFiles = listFilesSortedPosix(skillDir);
+    const expectedFiles = skill.files.map((f) => f.path).sort();
+    if (JSON.stringify(actualFiles) !== JSON.stringify(expectedFiles)) {
+      throw new Error(
+        `Staged export for skill "${skill.id}" at ${skillDir} has file set [${actualFiles.join(', ')}], expected [${expectedFiles.join(', ')}]`,
+      );
+    }
+    for (const file of skill.files) {
+      const actualHash = sha256OfFile(join(skillDir, ...file.path.split('/')));
+      if (actualHash !== file.sha256) {
+        throw new Error(
+          `Staged export for skill "${skill.id}" file "${file.path}" failed checksum verification at ${skillDir}`,
+        );
+      }
+    }
+  }
+}

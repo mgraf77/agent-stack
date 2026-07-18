@@ -276,4 +276,95 @@ node "${REPO_ROOT}/scripts/doctor.mjs" --out-root "${OUT_C}"
 echo "OK: doctor passes after profile change"
 
 echo
+echo "== injected mid-export failure leaves the prior valid export intact and doctor-clean =="
+OUT_D="${WORK_DIR}/run-d"
+mkdir -p "${OUT_D}"
+
+# Establish a known-good baseline export.
+run_sync "${OUT_D}"
+node "${REPO_ROOT}/scripts/doctor.mjs" --out-root "${OUT_D}" > /dev/null
+BASELINE_RECEIPT_CODEX="$(cat "${OUT_D}/.agents/skills/sync-receipt.json")"
+BASELINE_RECEIPT_CLAUDE="$(cat "${OUT_D}/.claude/skills/sync-receipt.json")"
+
+# Re-apply the same profile but inject a failure partway through staging
+# the codex export (after "demo-tool" is staged, before the receipt is
+# written or the swap happens). This simulates the crash/disk failure the
+# old replace-then-copy sequence was vulnerable to.
+if AGENT_STACK_SYNC_TEST_FAIL_AFTER_SKILL="codex:demo-tool" node "${REPO_ROOT}/scripts/sync.mjs" \
+  --profile demo \
+  --mode apply \
+  --skills-dir "${FIXTURE_SKILLS}" \
+  --profiles-dir "${FIXTURE_PROFILES}" \
+  --out-root "${OUT_D}" \
+  --release "fixture-0.0.0" \
+  --timestamp "${FIXED_TIMESTAMP}" \
+  > "${WORK_DIR}/mid-export-failure.log" 2>&1; then
+  echo "FAIL: sync.mjs did not fail despite the injected mid-export failure"
+  cat "${WORK_DIR}/mid-export-failure.log"
+  exit 1
+fi
+if ! grep -q "Injected test failure after staging skill" "${WORK_DIR}/mid-export-failure.log"; then
+  echo "FAIL: injected failure did not fire as expected"
+  cat "${WORK_DIR}/mid-export-failure.log"
+  exit 1
+fi
+echo "OK: injected failure fired partway through staging the codex export"
+
+if [ ! -d "${OUT_D}/.agents/skills.sync-staging" ]; then
+  echo "FAIL: expected the aborted build's staging directory to be left behind for inspection"
+  exit 1
+fi
+echo "OK: aborted build's staging directory was left behind (targetDir itself was never touched)"
+
+if [ "$(cat "${OUT_D}/.agents/skills/sync-receipt.json")" != "${BASELINE_RECEIPT_CODEX}" ] || \
+   [ "$(cat "${OUT_D}/.claude/skills/sync-receipt.json")" != "${BASELINE_RECEIPT_CLAUDE}" ]; then
+  echo "FAIL: prior valid export's receipts changed after the injected mid-export failure"
+  exit 1
+fi
+echo "OK: prior valid export's receipts are unchanged"
+
+node "${REPO_ROOT}/scripts/doctor.mjs" --out-root "${OUT_D}"
+echo "OK: doctor is clean immediately after the injected mid-export failure"
+
+echo
+echo "== a swap interrupted between its two renames is recovered on the next apply =="
+OUT_E="${WORK_DIR}/run-e"
+mkdir -p "${OUT_E}"
+run_sync "${OUT_E}"
+node "${REPO_ROOT}/scripts/doctor.mjs" --out-root "${OUT_E}" > /dev/null
+
+# Fabricate the on-disk state a crash between atomicReplaceDirectory's two
+# renames would leave: the live export already moved aside to its backup
+# path, and a staging directory (here, an incomplete stand-in) left behind
+# from the build that was in flight.
+mv "${OUT_E}/.agents/skills" "${OUT_E}/.agents/skills.sync-backup"
+mkdir -p "${OUT_E}/.agents/skills.sync-staging"
+
+if node "${REPO_ROOT}/scripts/doctor.mjs" --out-root "${OUT_E}" --adapters codex > "${WORK_DIR}/interrupted-doctor.log"; then
+  echo "FAIL: doctor did not notice the interrupted swap (target directory missing)"
+  cat "${WORK_DIR}/interrupted-doctor.log"
+  exit 1
+fi
+echo "OK: doctor detects the interrupted-swap state (target directory missing)"
+
+run_sync "${OUT_E}"
+
+if [ -e "${OUT_E}/.agents/skills.sync-backup" ] || [ -e "${OUT_E}/.agents/skills.sync-staging" ]; then
+  echo "FAIL: leftover staging/backup directory survived recovery"
+  exit 1
+fi
+echo "OK: leftover staging/backup directories were cleaned up by the next apply"
+
+node "${REPO_ROOT}/scripts/doctor.mjs" --out-root "${OUT_E}"
+
+if diff -r "${OUT_E}/.agents/skills" "${OUT_B}/.agents/skills" > /dev/null; then
+  echo "OK: recovered export matches a clean demo export byte-for-byte"
+else
+  echo "FAIL: recovered export does not match a clean demo export"
+  diff -r "${OUT_E}/.agents/skills" "${OUT_B}/.agents/skills" || true
+  exit 1
+fi
+echo "OK: interrupted swap recovered automatically on the next apply, doctor-clean"
+
+echo
 echo "ALL CHECKS PASSED"
