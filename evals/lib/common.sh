@@ -55,3 +55,88 @@ capability_entrypoint() {
   fi
   jq -r '.entrypoint // "run.sh"' "$manifest"
 }
+
+# validate_skill_manifest <cap_dir> — pre-check run only in `--skill` gate
+# mode, before any of the six promotion checks. Rejects: a missing/invalid
+# manifest, a manifest "id" that doesn't match the selected skill
+# directory, an entrypoint that is absolute, traverses with "..", escapes
+# the skill directory via a symlink, or doesn't exist, and
+# instruction_only/entrypoint being set inconsistently. Mirrors
+# scripts/validate.py's validate_skill_promotions() so the same rules
+# apply whether a skill is checked at commit time or gated for promotion.
+# Prints one diagnostic line to stderr and returns 1 on the first problem
+# found; returns 0 silently when the manifest is sound.
+validate_skill_manifest() {
+  local cap_dir="$1"
+  local manifest
+  manifest="$(manifest_path "$cap_dir")"
+
+  if [[ ! -f "$manifest" ]]; then
+    echo "manifest not found: $manifest" >&2
+    return 1
+  fi
+  if ! jq -e . "$manifest" >/dev/null 2>&1; then
+    echo "manifest is not valid JSON: $manifest" >&2
+    return 1
+  fi
+
+  local expected_id manifest_id
+  expected_id="$(basename "$cap_dir")"
+  manifest_id=$(jq -r '.id // empty' "$manifest")
+  if [[ -z "$manifest_id" ]]; then
+    echo "manifest has no 'id' field: $manifest" >&2
+    return 1
+  fi
+  if [[ "$manifest_id" != "$expected_id" ]]; then
+    echo "manifest id '$manifest_id' does not match selected skill directory '$expected_id'" >&2
+    return 1
+  fi
+
+  local instruction_only entrypoint
+  instruction_only=$(jq -r '.instruction_only // false' "$manifest")
+  entrypoint=$(jq -r '.entrypoint // empty' "$manifest")
+
+  if [[ "$instruction_only" == "true" ]]; then
+    if [[ -n "$entrypoint" ]]; then
+      echo "manifest sets instruction_only: true but also declares entrypoint '$entrypoint' (a skill is either instruction-only or has one entrypoint, not both)" >&2
+      return 1
+    fi
+    return 0
+  fi
+
+  if [[ -z "$entrypoint" ]]; then
+    echo "manifest declares no entrypoint and instruction_only is not true" >&2
+    return 1
+  fi
+
+  case "$entrypoint" in
+    /*)
+      echo "entrypoint '$entrypoint' must be a relative path, not absolute" >&2
+      return 1
+      ;;
+    ../*|*/../*|*/..|..)
+      echo "entrypoint '$entrypoint' must not traverse outside the skill directory" >&2
+      return 1
+      ;;
+  esac
+
+  local candidate="$cap_dir/$entrypoint"
+  local resolved_dir resolved_entry
+  resolved_dir="$(realpath -e "$cap_dir" 2>/dev/null)" || {
+    echo "skill directory could not be resolved: $cap_dir" >&2
+    return 1
+  }
+  resolved_entry="$(realpath -e "$candidate" 2>/dev/null)" || {
+    echo "entrypoint '$entrypoint' does not exist in $cap_dir" >&2
+    return 1
+  }
+  case "$resolved_entry" in
+    "$resolved_dir"/*) ;;
+    *)
+      echo "entrypoint '$entrypoint' resolves outside $cap_dir (symlink escape?)" >&2
+      return 1
+      ;;
+  esac
+
+  return 0
+}

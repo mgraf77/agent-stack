@@ -16,6 +16,12 @@ Checks:
     the same algorithm scripts/lib/checksum.mjs uses (sha256 over an
     ordered list of "label:hex" pairs), to catch drift or hand-edits
     without needing Node.
+  - skills/*/promotion.json (a real skill's promotion manifest, see
+    schemas/skill-promotion-manifest.schema.json) has the required fields,
+    an 'id' matching its containing skills/<id>/ directory, and — unless
+    instruction_only is true — a declared entrypoint that is a plain
+    relative path inside that same skill directory (no absolute path, no
+    '..' traversal, no symlink escape) pointing at a file that exists.
 
 No network access, no third-party packages, no API keys.
 """
@@ -23,11 +29,12 @@ No network access, no third-party packages, no API keys.
 import csv
 import hashlib
 import json
+import os
 import re
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(os.environ.get("AGENT_STACK_VALIDATE_ROOT", Path(__file__).resolve().parent.parent))
 
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 ID_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
@@ -242,6 +249,116 @@ def validate_profiles(capabilities):
     return profiles
 
 
+def _validate_skill_entrypoint(path, skill_dir, entrypoint):
+    """Returns an error string, or None if entrypoint is a safe relative
+    path inside skill_dir that exists and doesn't escape via a symlink."""
+    if entrypoint.startswith("/") or Path(entrypoint).is_absolute():
+        return f"{path}: entrypoint '{entrypoint}' must be a relative path, not absolute"
+    if ".." in Path(entrypoint).parts:
+        return f"{path}: entrypoint '{entrypoint}' must not traverse outside the skill directory"
+
+    candidate = skill_dir / entrypoint
+    if not candidate.is_file():
+        return f"{path}: entrypoint '{entrypoint}' does not exist in skills/{skill_dir.name}/"
+
+    try:
+        resolved_skill_dir = skill_dir.resolve(strict=True)
+        resolved_entry = candidate.resolve(strict=True)
+    except OSError as exc:
+        return f"{path}: entrypoint '{entrypoint}' could not be resolved ({exc})"
+
+    try:
+        resolved_entry.relative_to(resolved_skill_dir)
+    except ValueError:
+        return f"{path}: entrypoint '{entrypoint}' resolves outside skills/{skill_dir.name}/ (symlink escape?)"
+    return None
+
+
+def validate_skill_promotions():
+    skills_dir = ROOT / "skills"
+    manifests = {}
+    if not skills_dir.is_dir():
+        return manifests
+
+    required = [
+        "id",
+        "provenance",
+        "declared_tools",
+        "untrusted_content_handling",
+        "trigger_keywords",
+        "positive_examples",
+        "negative_examples",
+        "rollback",
+    ]
+    for skill_dir in sorted(p for p in skills_dir.iterdir() if p.is_dir()):
+        path = skill_dir / "promotion.json"
+        if not path.is_file():
+            continue
+        record = load_json(path)
+        if record is None:
+            continue
+        check_required(path, record, required)
+
+        skill_id = record.get("id")
+        if skill_id and skill_id != skill_dir.name:
+            error(f"{path}: id '{skill_id}' does not match containing directory 'skills/{skill_dir.name}'")
+        if skill_id and not ID_RE.match(skill_id):
+            error(f"{path}: id '{skill_id}' is not kebab-case")
+
+        provenance = record.get("provenance")
+        if isinstance(provenance, dict):
+            for field in ("origin", "license"):
+                if not provenance.get(field):
+                    error(f"{path}: provenance.{field} is required")
+        elif provenance is not None:
+            error(f"{path}: provenance must be an object")
+
+        for field in ("declared_tools", "trigger_keywords", "positive_examples", "negative_examples"):
+            value = record.get(field)
+            if value is not None and not (
+                isinstance(value, list) and value and all(isinstance(v, str) for v in value)
+            ):
+                error(f"{path}: {field} must be a non-empty array of strings")
+
+        untrusted = record.get("untrusted_content_handling")
+        if untrusted is not None and not isinstance(untrusted, bool):
+            error(f"{path}: untrusted_content_handling must be a boolean")
+
+        instruction_only = record.get("instruction_only", False)
+        if not isinstance(instruction_only, bool):
+            error(f"{path}: instruction_only must be a boolean")
+            instruction_only = False
+
+        entrypoint = record.get("entrypoint")
+        if instruction_only:
+            if entrypoint is not None:
+                error(
+                    f"{path}: instruction_only is true but entrypoint is also set "
+                    "(a skill is either instruction-only or has one entrypoint, not both)"
+                )
+        elif not entrypoint or not isinstance(entrypoint, str):
+            error(f"{path}: entrypoint is required unless instruction_only is true")
+        else:
+            entry_error = _validate_skill_entrypoint(path, skill_dir, entrypoint)
+            if entry_error:
+                error(entry_error)
+
+        rollback = record.get("rollback")
+        if isinstance(rollback, dict):
+            for field in ("method", "date_recorded"):
+                if not rollback.get(field):
+                    error(f"{path}: rollback.{field} is required")
+            date_recorded = rollback.get("date_recorded")
+            if date_recorded and not DATE_RE.match(date_recorded):
+                error(f"{path}: rollback.date_recorded '{date_recorded}' is not YYYY-MM-DD")
+        elif rollback is not None:
+            error(f"{path}: rollback must be an object")
+
+        if skill_id:
+            manifests[skill_id] = record
+    return manifests
+
+
 def validate_receipts(profiles):
     receipts_dir = ROOT / "catalog" / "receipts"
     if not receipts_dir.exists():
@@ -332,8 +449,12 @@ def main():
     capabilities = validate_capabilities(catalogue_by_name)
     profiles = validate_profiles(capabilities)
     validate_receipts(profiles)
+    skill_manifests = validate_skill_promotions()
 
-    print(f"Checked: 1 catalogue, {len(capabilities)} capabilities, {len(profiles)} profiles.")
+    print(
+        f"Checked: 1 catalogue, {len(capabilities)} capabilities, {len(profiles)} profiles, "
+        f"{len(skill_manifests)} skill promotion manifest(s)."
+    )
     for w in warnings:
         print(f"WARNING: {w}")
     if errors:

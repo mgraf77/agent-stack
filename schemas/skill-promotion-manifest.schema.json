@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://agent-stack.local/schemas/skill-promotion-manifest.schema.json",
   "title": "Skill promotion manifest",
-  "description": "Smallest metadata a curated skills/<id>/ package needs to be gated by evals/run.sh --skill as a real promotion candidate, per the 'Promoting a real curated skill' section of policies/promotion-lifecycle.md. Stored as skills/<id>/promotion.json.",
+  "description": "Smallest metadata a curated skills/<id>/ package needs to be gated by evals/run.sh --skill as a real promotion candidate, per the 'Promoting a real curated skill' section of policies/promotion-lifecycle.md. Stored as skills/<id>/promotion.json. This schema documents the shape; scripts/validate.py's validate_skill_promotions() and evals/lib/common.sh's validate_skill_manifest() enforce the parts a static JSON Schema can't (id matching the containing directory, entrypoint path safety, instruction_only/entrypoint mutual exclusivity).",
   "type": "object",
   "required": [
     "id",
@@ -56,12 +56,12 @@
     },
     "entrypoint": {
       "type": "string",
-      "description": "Relative path, within the skill directory, to its existing safe-usage check script (e.g. check.sh). Omit and set instruction_only: true when the skill has no runtime script to gate."
+      "description": "Relative path, within the skill directory, to its existing safe-usage check script (e.g. check.sh). Must not be absolute, contain a '..' traversal segment, or resolve (including through a symlink) outside the skill directory, and the file must exist. Required unless instruction_only is true, in which case it must be omitted entirely — the two are mutually exclusive."
     },
     "instruction_only": {
       "type": "boolean",
       "default": false,
-      "description": "True when the skill is instructions-only and ships no runtime entrypoint. failure_behavior and permission_boundary are then not applicable rather than failed for missing an executable."
+      "description": "True when the skill is instructions-only and ships no runtime entrypoint; entrypoint must then be omitted. failure_behavior and permission_boundary are then not applicable rather than failed for missing an executable."
     },
     "rollback": {
       "type": "object",

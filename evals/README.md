@@ -6,8 +6,8 @@ entry) against six required dimensions before it can be promoted. See the
 the stage rules this feeds.
 
 Everything here runs locally and for free — bash, `jq`, and coreutils
-`timeout` only. No provider API key or network call is required or used
-anywhere in this directory, per `policies/free-first.md`.
+`timeout`/`realpath` only. No provider API key or network call is required
+or used anywhere in this directory, per `policies/free-first.md`.
 
 ## Run it
 
@@ -64,6 +64,26 @@ exactly one new file, `skills/<id>/promotion.json`, matching
 `--skill` runs the identical six checks as `--capability`; only where the
 manifest and entrypoint are read from differs.
 
+### Manifest pre-check (`--skill` only)
+
+Before any of the six checks run, `--skill` validates the manifest itself
+(`validate_skill_manifest` in `evals/lib/common.sh`) and rejects — with
+exit code `2`, distinct from a check failure's exit `1` — a manifest that:
+
+- is missing or not valid JSON,
+- has no `id`, or an `id` that doesn't match the selected skill directory,
+- sets `instruction_only: true` while also declaring an `entrypoint` (or
+  vice versa: no `entrypoint` and `instruction_only` not `true`),
+- declares an `entrypoint` that is an absolute path, contains a `..`
+  traversal segment, resolves (including through a symlink) outside the
+  skill directory, or doesn't exist.
+
+`scripts/validate.py` enforces the identical rules for every
+`skills/*/promotion.json` on disk (see below), so a bad manifest is caught
+at commit time even before anyone runs the gate. Regressions for both live
+in `evals/tests/skill-gate-regressions.sh` (gate pre-check) and
+`tests/skill-promotion-validate.py` (`scripts/validate.py`).
+
 ## The six checks
 
 | Check                 | What it proves                                                                 |
@@ -104,6 +124,15 @@ document (fake shell commands and a fake secret token) used by the
 skill) against a manifest with one field deliberately wrong, proving
 `--skill` correctly fails a real candidate and isn't just passing by
 construction.
+
+`evals/tests/skill-gate-regressions.sh` covers the `--skill` manifest
+pre-check itself: id mismatch, absolute/traversal/symlink-escaping
+entrypoints, and an `instruction_only`/`entrypoint` conflict, each
+asserted to fail with exit `2` (before the six checks run) rather than
+exit `1` (a check failing). It also re-asserts the positive and
+`secret-safety-broken.promotion.json` negative runs above still hold, so
+one script is the full regression suite for the real-skill route. Run it
+directly: `bash evals/tests/skill-gate-regressions.sh`.
 
 ## Promotion record
 

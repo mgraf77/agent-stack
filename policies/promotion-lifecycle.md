@@ -62,7 +62,15 @@ own files instead of a separate fixture-shaped candidate directory:
    `run.sh`, and do not require a runtime executable at all when the skill
    is instruction-only: set `instruction_only: true` and omit `entrypoint`
    instead. `failure_behavior`/`permission_boundary` are then not
-   applicable rather than failed for missing a script.
+   applicable rather than failed for missing a script. `entrypoint` must be
+   a plain path relative to `skills/<id>/` — no absolute path, no `..`
+   traversal, no symlink escaping the skill directory — and it must exist;
+   `instruction_only: true` and `entrypoint` are mutually exclusive, and
+   exactly one of them must be set. `python3 scripts/validate.py` and
+   `bash evals/run.sh --skill skills/<id>` both enforce this identically
+   (the latter as a pre-check, before the six checks run, failing with
+   exit code `2` rather than a check's exit `1`), so a malformed manifest
+   is caught at commit time, not only at gate time.
 3. Confirm `SKILL.md` states explicit untrusted-content handling guidance
    when `untrusted_content_handling: true`, as the `prompt_injection` check
    requires the same as it does for a synthetic candidate.
@@ -78,6 +86,12 @@ own files instead of a separate fixture-shaped candidate directory:
 `--skill` usage and the negative-control fixture proving the gate actually
 discriminates. No other curated skill is migrated by this change — see
 `evals/fixtures/skills/README.md` before adding more.
+
+Regressions for the manifest rules above (`id` mismatch; an invalid,
+unsafe, or missing `entrypoint`; an `instruction_only`/`entrypoint`
+conflict) live in `tests/skill-promotion-validate.py` (`scripts/validate.py`
+side) and `evals/tests/skill-gate-regressions.sh` (`--skill` gate side).
+Run both before changing either the schema or the validation logic.
 
 ## No auto-merge or autonomous production authority
 

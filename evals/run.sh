@@ -43,7 +43,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FIXTURES_DIR="$ROOT/fixtures"
 export FIXTURES_DIR
 
-for tool in jq timeout; do
+for tool in jq timeout realpath; do
   if ! command -v "$tool" >/dev/null 2>&1; then
     echo "Missing required local tool: $tool" >&2
     exit 2
@@ -62,6 +62,7 @@ CHECKS=(positive_activation negative_activation failure_behavior permission_boun
 MODE="self-test"
 CAP_DIR=""
 MANIFEST_OVERRIDE=""
+SKILL_MODE=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --capability)
@@ -74,6 +75,7 @@ while [[ $# -gt 0 ]]; do
       CAP_DIR="$2"
       MODE="gate"
       MANIFEST_FILE_NAME="promotion.json"
+      SKILL_MODE=1
       shift 2
       ;;
     --manifest)
@@ -111,6 +113,16 @@ if [[ "$MODE" == "gate" ]]; then
     exit 2
   fi
   CAP_DIR="$(cd "$CAP_DIR" && pwd)"
+
+  if [[ "$SKILL_MODE" -eq 1 ]]; then
+    if ! manifest_err=$(validate_skill_manifest "$CAP_DIR" 2>&1); then
+      echo "== Skill manifest validation =="
+      echo "INVALID: $manifest_err"
+      echo
+      echo "RESULT: manifest rejected before the six checks. Not eligible for promotion."
+      exit 2
+    fi
+  fi
 
   echo "== Promotion gate: $(basename "$CAP_DIR") =="
   echo "== Harness self-scan (prompt-injection defense-in-depth) =="
