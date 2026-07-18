@@ -28,7 +28,7 @@ First stable Agent Stack release. Validated baseline includes:
 - First real `product-build` profile sync pilot and evidence note
   (`docs/pilots/`).
 
-Verified on the release commit: `python3 scripts/validate.py`,
-`bash tests/determinism.sh`, and `bash evals/run.sh` all pass. Exact
-release commit SHA to be recorded here once the `v0.1.0` tag is cut per
-`release/CHECKLIST.md` step 5.
+The immutable `v0.1.0` Git tag and GitHub release identify the exact
+release commit. The validated baseline passed `python3 scripts/validate.py`,
+`bash tests/determinism.sh`, and `bash evals/run.sh` before the release
+note was prepared.
